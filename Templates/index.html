@@ -1,0 +1,115 @@
+{% load static %}
+
+
+<div id='index'>
+<a href='/' class='navTop'>   
+    
+    <div class='shadow'></div>
+    <img id='logo' src={{ sonet.LogoLink }}>
+    {% if sonet.title == 'SoVote' %}
+    <h1>So<span style="position:relative; right:3px"><span style='font-size:100%'>V</span>ote</span></h1>
+    {% else %}
+    <h1>{{ sonet.title }}</h1>
+    {% endif %}
+    <div>{{ sonet.subtitle }}</div>
+    
+</a>
+<div id='navigation'>
+
+<!-- <div class='userProfile'>
+    <img class='userPic' src={% static 'img/user-coloured.png' %}>
+    <div class='userName'>{% if request.user.is_authenticated %}<a href='{{ user.get_absolute_url }}'><span style='color:#b78e12'>V</span>|{{ user.username }}</a>{% else %}<a href='/login'>Login / Signup</a>{% endif %}</div>
+</div> -->
+<div style="position: relative;margin-left: 55px; margin-top: 10px; margin-bottom: -10px; font-style:italic;">in development</div>
+<ul id='userProfile'>
+    <li><img id='userPic' src={% static 'img/user-coloured.png' %}></li>
+    <!-- <li id='userName'><span onclick="modalPopUp('Select Region', '/accounts/get_country_modal')">enter region</span></li> -->
+    <li id='userName'>{% if request.user.is_authenticated %}{{ request.user.get_userLink_html|safe }}{% else %}<span onclick="modalPopUp('Login / Signup', '/accounts/login-signup')">Login/Signup</span>{% endif %}</li>
+    <!-- <li id='userName'>{% if request.user.is_authenticated %}<a href='{{ user.get_absolute_url }}'><span style='color:#b78e12'>V</span><span style='color:gray'>/</span>{{ user.display_name }}</a>{% else %}<span onclick="modalPopUp('Login / Signup', '/accounts/login-signup')">Login/Signup</span>{% endif %}</li> -->
+    <!-- <li class='userName'>{% if request.user.is_authenticated %}<a href='{{ user.get_absolute_url }}'><span style='color:#b78e12'>V</span><div class='shady'><div id="line_one"></div><div id="line_two"></div></div>{{ user.username }}</a>{% else %}<a href='/login'>Login / Signup</a>{% endif %}</li> -->
+    
+    <!-- <li class='settings'><span class="material-icons">settings</span></li> -->
+</ul>
+
+
+
+<ul>
+
+    {% if request.user.is_authenticated %}
+        <li><a href='/new'>New</a></li>
+    {% endif %}
+    <li><a href='/{{ country|lower }}/search'>Search</a></li>
+        <!-- <li><a href='/home'>Level: All</a></li> -->
+    <!-- </ul> -->
+    <br>
+    {% if request.user.is_authenticated %}
+        <li style='font-size:130%'><a href='/{{ country|lower }}/home'>Home</a></li>
+    <ul class='navSubmenu' id='home'>    
+        <li><a href='/following'>Following</a></li>
+        <li><a href='/region'>Region</a></li>
+    </ul>
+    {% else %}
+        <li style='font-size:130%'><a href='/{{ country|lower }}/home'>Home</a></li>
+    {% endif %}
+        <!-- <br> -->
+        <!-- <li style='font-size:130%'><a href='/home'>Home</a></li> -->
+    <!-- <li style='font-size:130%'><a href='/home'>Home</a></li> -->
+    <!-- <br> -->
+    <!-- <li style='font-size:130%'><a href='/region'>Region</a></li> -->
+    <!-- <ul class='navSubmenu'>    
+        <li><a href='/everything'>Everything</a></li>
+        <li><a href='/region'>Regional</a></li>
+        <li><a href='{{ user.get_absolute_url }}?view=following'>Following</a></li>
+    </ul> -->
+    
+    <br>
+    <li style='font-size:130%'><a href='/{{ country|lower }}/citizenry'>Citizenry</a></li>
+    <ul class='navSubmenu' id='citizenry'>    
+        <li><a href='/{{ country|lower }}/citizen-debates'>Debates</a></li>
+        <li><a href='/{{ country|lower }}/citizen_bills'>Bills</a></li>
+        <li><a href='/{{ country|lower }}/polls'>Polls</a></li>
+        <!-- <li><a href='/petitions'>Petitions</a></li> -->
+    </ul>
+    <br>
+    <li style='font-size:130%'><a href='/{{ country|lower }}/legislature'>Legislature</a></li>
+    <ul class='navSubmenu' id='legislature'>    
+        <!-- <li><a href='/{{ country.lowerName }}/debates'>Debates</a></li>
+        <li><a href='/{{ country.lowerName }}/bills'>Bills</a></li>
+        <li><a href='/{{ country.lowerName }}/motions'>Motions</a></li>
+        <li><a href='/{{ country.lowerName }}/officials'>Officials</a></li>
+        <li><a href='/{{ country.lowerName }}/elections'>Elections</a></li> -->
+        {% for i in country.return_menu_items %}
+        <li><a href='/{{ country|lower }}/{{i|lower}}'>{{ i }}</a></li>
+        {% endfor %}
+    </ul>
+
+    <br>
+    {% if request.user.is_superuser %}
+    <li><a href='/someta'>SoMeta</a></li>
+    {% endif %}
+    <li><a href='/hero'>Be a Hero</a></li>
+    <li><a href='/values'>Our Values</a></li>
+    <li><a href='/get-the-app'>Get the App</a></li>
+    {% if request.user.is_superuser %}
+    <li><a href='/utils/build_database'>superuser</a></li>
+    {% endif %}
+    <br>
+    {% if theme == 'night' %}
+    <li id='theme' onclick='themer()'>Night Theme</a></li>
+    {% else %}
+    <li id='theme' onclick='themer()'>Day Theme</a></li>
+    {% endif %}
+    {% if request.user.is_authenticated %}
+    <li id="settingsLink"><a href='/user/settings'>Settings</a></li>
+    <li id="logoutLink"><a onclick='logout("/accounts/logout")'>Log Out</a></li>
+    {% else %}
+    <li id="settingsLink"></li>
+    <li id="logoutLink"></li>
+    {% endif %}
+
+</ul>
+<br>
+
+</div>
+
+</div>

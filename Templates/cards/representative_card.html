@@ -1,0 +1,77 @@
+{% load static %}
+{% load humanize %} 
+
+<div class='card person'>
+    {% comment %}
+    {% endcomment %}
+    <div>Person:{{person}},updatedperson:{{updatedPerson}},role:{{r}},updatedr:{{updatedRole.data}}</div>
+    <div>rr{{ updatedRole|get_updated_field:'LogoLink' }}</div>
+    {% if updatedRole|get_updated_field:'LogoLink' %}
+        <a href={{ person.get_absolute_url }}><img class='profilePic' src={{ updatedRole|get_updated_field:'LogoLink' }}></a>
+    {% elif updatedPerson|get_updated_field:'AvatarLink' %}
+        <a href={{ person.get_absolute_url }}><img class='profilePic' src={{ updatedPerson|get_updated_field:'AvatarLink' }}></a>
+    {% else %}
+        <img class='profilePic' style='height:100px; width:100px;' src={% static 'img/user-coloured.png' %}>
+    {% endif %}
+    <div class='profileInfo'>
+    <h2><a href={{ person.get_absolute_url }}>{{ updatedPerson|get_updated_field:'Honorific' }} {{ updatedPerson|get_updated_field:'FullName' }}</a></h2>
+    <ul>    
+            {% if r.Position %}
+            <li>{{ r.Position }}</li>
+            {% endif %}
+            
+            {% if updatedPerson.Party_obj %}
+            <li>{{ updatedPerson.Party_obj.Name }}</li>
+            {% endif %}
+            {% if updatedPerson.Party_obj.Colour %}
+            <div class='partyColour' style='background-color:{{ updatedPerson.Party_obj.Colour }}'></div>
+            {% endif %}
+            <!-- <li>chamber: {{ updatedRole|get_updated_field:'chamber' }}</li> -->
+            {% if updatedRole|get_updated_field:'District_obj' %}
+            <li>Distict: {{ updatedRole|get_updated_field:'District_obj,Name' }}</li>
+            {% endif %}
+            <li>{{ updatedRole|get_updated_field:'ProvState_obj,nameType' }}: {{ updatedRole|get_updated_field:'ProvState_obj,Name' }}</li>
+            <li>Region: {{ updatedRole|get_updated_field:'Region_obj,Name' }}</li>
+            
+            {% if r.Region %}
+            <li>{{ r.Region.Name }}</li>
+            {% endif %}
+            {% if r.District %}
+            <li>{{ r.District.Name }}</li>
+            {% endif %}
+            {% if r.StartDate %}
+            <li>{{ r.StartDate|date:"F d, Y" }}</li>
+            {% endif %}
+            {% if updatedRole|get_updated_field:'Address' %}
+            <li>{{ updatedRole|get_updated_field:'Address' }}</li>
+            {% endif %}
+            {% if updatedRole|get_updated_field:'Telephone' %}
+            <li>tel: {{ updatedRole|get_updated_field:'Telephone' }}</li>
+            {% endif %}
+            {% if updatedRole|get_updated_field:'Fax' %}
+            <li>fax: {{ updatedRole|get_updated_field:'Fax' }}</li>
+            {% endif %}
+            {% if updatedRole|get_updated_field:'Email'  %}
+            <li>{{ updatedRole|get_updated_field:'Email' }}</li>
+            {% endif %}
+            {% if updatedRole|get_updated_field:'Website' %}
+            <li>website: {{ updatedRole|get_updated_field:'Website' }}</li>
+            {% endif %}
+            {% if updatedRole|get_updated_field:'XTwitter' %}
+            <li>twitter: {{ updatedRole|get_updated_field:'XTwitter' }}</li>
+            {% endif %}
+            {% if r.attendancePercent %}
+            <li>Voting Attendance: {{ r.attendancePercent }}%</li>
+            {% endif %}
+            {% if r.quarterlyExpenseReport %}
+            <li>Expenses Last Quarter: ${{ r.quarterlyExpenseReport|floatformat:2|intcomma }}</li>
+            {% endif %}
+            {% if updatedPerson|get_updated_field:'GovProfilePage' %}
+            <br>
+            <li><a href={{ updatedPerson|get_updated_field:'GovProfilePage' }}>Government Page</a></li>
+            {% endif %}
+
+    </ul>
+    </div>  
+</div>
+<div class='bottomDivider'></div>

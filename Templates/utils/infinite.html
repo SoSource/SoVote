@@ -1,0 +1,95 @@
+<script>
+    //infinite scroll
+    // alert('scroll')
+    $(window).scroll(InView);
+    
+    
+    
+    
+    function InView() {
+        var bottom = document.getElementById("bottomCard");
+        var docViewBottom = window.innerHeight;
+    
+        var elemTop = bottom.offsetTop;
+        var distanceScrolled = document.body.scrollTop;
+        var target = distanceScrolled + docViewBottom
+        if (target >= (elemTop+100)){
+            // alert('inview')
+            if (!$("#bottomCard").hasClass("active")) {
+                $("#bottomCard").addClass("active");
+                code = '<div class="lds-dual-ring"></div>'
+                // alert(code)
+                var b = document.getElementsByClassName("step-links")[0];
+                // alert(b)
+                b.innerHTML = code
+                // alert('load')
+                infinite(bottom)
+            }
+        }
+    }
+    
+    function infinite(bottom){
+        // alert('inf')
+        var page = document.getElementById("nextPage").name;
+        var url = document.getElementById("nextUrl").name;    
+        // var rss = document.getElementById('column_rss').name;
+        var cards = document.getElementsByClassName('card');
+        var myList = new Array();
+        try{
+            for (f = 0; f < cards.length; f++){
+                try{
+                    // var title = cards[f].querySelector('#story_title').innerHTML
+    
+                    var iden = cards[f].id
+                    var n = iden.search("-");
+                    n += 1
+                    var id = iden.slice(n,)
+    
+    
+                     myList.push(id);
+
+                 }catch(err){}
+            }
+        }catch(err){}
+        // alert('2')
+        // alert(page)
+        $.ajax({
+              url: page,
+              success: function (data) {
+                //   alert(data)
+                // alert('remove_doubles')   
+                // if(rss == 'True'){ 
+                ParsedElements = $.parseHTML(data);
+                var new_cards =  $(ParsedElements);
+                var newList = new Array();
+                for (f = 0; f < new_cards.length; f++){
+                    newList.push(new_cards[f])
+                }
+                $('#feed').append(newList);
+                var cards = document.getElementsByClassName('card');
+                shorten_text(cards)
+                document.getElementById("bottomCard").outerHTML='';
+                window.history.pushState('', '', url);
+                
+                page = new_cards.filter(".pageNum");
+                currentPage = document.getElementById('currentPage')
+                currentPage.innerHTML = page[0].id
+                
+                page_picker = document.getElementsByClassName('pagePicker');
+                page_form = document.getElementById("pageForm");
+                page_form.innerHTML = page_picker[page_picker.length - 1].outerHTML;
+
+                 },
+              dataType: 'html'
+           });
+        // var cards = document.getElementsByClassName("card");
+        // //while(cards.length > {% if request.user.is_anonymous %}25{% else %}{{ user.pagesize }}{% endif %}){
+        // //    cards[0].parentNode.removeChild(cards[0]);
+        // //} //remove top cards when reach bottom
+        // var p = $(bottom).find('#previous')
+        // var t = document.getElementsByClassName("topcard");
+        // // $(t).find('#previous').replaceWith(p); //add link to previous page at top
+    }
+    
+    
+    </script>

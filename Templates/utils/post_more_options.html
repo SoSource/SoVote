@@ -1,0 +1,27 @@
+
+
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>More Options</title>
+</head>
+<body>
+
+<div>
+    <div>
+        <br>
+        <br>
+        <br>
+        <br>
+        <ul class="modalList">
+            <li title='Save' class='saveButton, clickable' onclick='react("saveButton", "{{ post.id }}")'>{% if interaction.SavePost_obj and interaction.SavePost_obj.saved %}<span class="material-icons">star</span> Saved{% else %}<span class="material-icons">star_border</span> Save{% endif %}</li>
+            <br>
+            <li title='Share' class="clickable" {% if isApp %} onclick='mobileShare("{{post.id}}")'{% else %} onclick="react('share','{{post.id}}')"{% endif %}><span class="material-icons">share</span> Share</li>
+            <br>
+            <li title='Verify Me' class="clickable" onclick="react('verify','{{post.id}}')"><span class="material-icons">verified</span> Verify Me</li>
+        
+        </ul>
+</div>
+</body>
+</html>

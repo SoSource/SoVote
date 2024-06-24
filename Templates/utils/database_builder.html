@@ -1,0 +1,73 @@
+
+
+<html>
+    <style>   
+        *{
+            color: white;
+        }
+        body{
+            background: linear-gradient(to bottom, #181f2d, black);
+            background-attachment: fixed;
+        }
+    </style>
+    <body>
+        <a href='/'>Home</a>
+        {% if request.user.is_superuser %}
+        <div class='header'>Commands</div>
+        <div>
+            <ul class='commands' id='fourthPane'>
+                
+                <li><a href='/utils/daily_update'>Daily Update</a></li>
+                <li><a href='/utils/tester1'>Custom script</a></li>
+                <br>
+                <li>-----------Ontario-------</li>
+                <li><a href='/utils/mpps_update'>Get All MPPs</a></li>
+                <li><a href='/utils/ontario/current_bills'>Get Current Bills</a></li>
+                <li><a href='/utils/ontario/get_weekly_agenda'>Get Weekly Agenda</a></li>
+                <li><a href='/utils/ontario/get_motions'>Get Single Motion</a></li>
+                <li><a href='/utils/ontario/get_hansard'>Get Single Hansard</a></li>
+                <li><a href='/utils/ontario/get_latest_hansards'>Get Latest Hansard/Motion</a></li>
+                <li><a href='/utils/ontario/check_elections'>Check Elections</a></li>
+                <br>
+                <li>-----------FEDERAL-------</li>
+                <li><a href='/utils/mps_update'>Get All MPs</a></li>
+                <li><a href='/utils/senators_update'>Get All Senators</a></li>
+                <br>
+                <li><a href='/utils/get_todays_bills'>Get Todays Bills</a></li>
+                <li><a href='/utils/get_latest_bills'>Get Latest Bills</a></li>
+                <!-- <li><a href='/utils/get_all_bills/session'>Get Session Bills</a></li> -->
+                <li><a href='/utils/get_all_bills/alltime'>Get All Bills</a></li>
+                <li><a href='/utils/get_all_bills/session'>Get Session Bills</a></li>
+                <br>
+                <li><a href='/utils/get_federal_candidates'>Get Federal Candidates</a></li>
+                <li><a href='/utils/get_federal_house_expenses'>Get Federal House Expenses</a></li>
+                <br>
+                <li><a href='/utils/get_latest_house_hansard'>Get Latest House Hansard</a></li>
+                <!-- <li><a href='/utils/get_session_hansards'>Get Session House Hansards</a></li> -->
+                <li><a href='/utils/get_all_hansards'>Get All House Hansards</a></li>
+                <li><a href='/utils/get_all_senate_hansards'>Get Latest Senate Hansards</a></li>
+                <br>
+                <li><a href='/utils/get_latest_house_motions'>Get Latest House Motions</a></li>
+                <li><a href='/utils/get_all_house_motions'>Get All House Motions</a></li>
+                <li><a href='/utils/get_session_senate_motions'>Get Session Senate Motions</a></li>
+                <br>
+                <li><a href='/utils/get_latest_house_committee_list'>Get Latest House Committee List</a></li>
+                <li><a href='/utils/get_latest_house_committees_work'>Get Latest House Committees Work</a></li>
+                <li><a href='/utils/get_latest_house_committees'>Get Latest House Committees</a></li>
+                <li><a href='/utils/get_latest_senate_committees/past'>Get Latest Senate Committees</a></li>
+                <li><a href='/utils/get_all_senate_committees'>Get All Senate Committees</a></li>
+                <br>
+                <li><a href='/utils/all_agendas'>Get All Agendas</a></li>
+                <li><a href='/utils/get_latest_agenda'>Get Latest Agenda</a></li>
+                <li><a href='/utils/get_todays_xml_agenda'>get_todays_xml_agenda</a></li>
+                <li><a href='/utils/daily_summarizer'>Run daily summarizer</a></li>
+                <li><a href='/utils/test_notify'>Clear All App Caches</a></li>
+                <li><a href='/utils/run_notifications'>Test send notification to sozed</a></li>
+                <li><a href='/utils/set_party_colours'>Set Party Colours</a></li>
+                <br>
+            </ul>
+            <div class='fadeOut'></div>
+        </div>
+        {% endif %}
+    </body>
+</html>

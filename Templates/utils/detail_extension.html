@@ -1,0 +1,32 @@
+{% load static %}
+
+
+<div id='detailExtension'>
+    {% with billV=updatedVersion.BillVersion_obj %}
+    {% if billV.Version %}
+    <div class='billText'>
+        {{ billV.TextHtml|safe }}
+    </div>
+    {% comment %}
+    {% if reading and reading == 'Royal_Assent' or view and view == 'LatestReading' and b.bill.royal_assent_html %}
+    <div class='billText'>
+        {{ b.bill.royal_assent_html |safe }}
+    </div>
+    {% elif reading and reading == 'Third_Reading' or view and view == 'LatestReading' and b.bill.third_reading_html %}
+    <div class='billText'>
+        {{ b.bill.third_reading_html |safe }}
+    </div>
+    {% elif reading and reading == 'Second_Reading' or view and view == 'LatestReading' and b.bill.second_reading_html %}
+    <div class='billText'>
+        {{ b.bill.second_reading_html |safe }}
+    </div>
+    {% elif reading and reading == 'First_Reading' or view and view == 'LatestReading' and b.bill.first_reading_html %}
+    <div class='billText'>
+        {{ b.bill.first_reading_html |safe }}
+    </div>
+    {% endcomment %}
+    {% else %}
+    <div class='card'><p style='margin:auto;margin-top:20px;position: relative;'>Bill text not yet available</p></div>
+    {% endif %}
+    {% endwith %}
+</div>

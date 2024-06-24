@@ -1,0 +1,112 @@
+{% load static %}
+
+    <div class='card vote' id='{{ v.id }}'>
+        {% if mp %}
+            <div class='vote-motion' style='margin:0px;'>
+            {% with m=v.Motion_obj %}
+                {% if m.Sponsor_obj %}
+                <div class='sponsor'>
+                    {% if m.Sponsor_obj.AvatarLink %}
+                        <a href={{ m.Sponsor_obj.get_absolute_url }}><img class='sponsorPic' style='border-bottom:4px solid {{ m.Sponsor_obj.Party_obj.Colour }};' src={{ m.Sponsor_obj.AvatarLink }}></a>
+                    {% else %}
+                        <img class='votePic' src={% static 'img/user-coloured.png' %}>
+                    {% endif %}
+                    <div class='sponsorInfo'>
+                        <div>Sponsor:</div>
+                        <div><h3><a href={{ m.sponsor.get_absolute_url }}>{{ m.Sponsor_obj.FullName }}</a></h3></div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- <div style='position:relative; display: block; width: 50px;'></div> -->
+                <div class='sponsor'>
+                        <img class='sponsorPic' src={% static 'img/house_coat_of_arms.png' %}>
+                </div>
+                {% endif %}
+                <div class='cardContent'>
+                <div class='Info'>
+                    <div class='Code'>
+                        <h2><a href='{{ m.get_absolute_url }}'>{% if m.province %}Assembly{% else %}{{ m.OriginatingChamberName }}{% endif %} Motion No. {{ m.vote_number }}</a></h2>
+                        <div class='Parl'>
+                            <div>{{ m.Government_obj.GovernmentNumber|get_ordinal }} {% if m.Government_obj.gov_type == 'Parliament' %}Parl.{% else %}Gov.{% endif %} {{ m.Government_obj.SessionNumber|get_ordinal }} Sess. {% if motion.Government_obj.gov_level != 'Federal' %}({{ motion.Region_obj.AbbrName }}){% endif %}</div>
+                            <div>{{ m.DateTime }}</div>  
+                        </div>
+                    </div>
+                    <div class='Details'>
+                        {% if m.Subject %}
+                            <div class='title'><a href='{{ m.get_absolute_url }}'>{{ m.Subject }}</a></div>
+                        {% endif %}
+                        {% if m.Bill_obj %}
+                        <ul style='margin-bottom: -5px;'>
+                            <li><a href={{ m.Bill_obj.get_absolute_url }}>Bill {{ m.Bill_obj.NumberCode }}</a></li>
+                            <li>Latest: {{ m.Bill_obj.LatestCompletedMajorStageNameWithChamberSuffix }}</li>
+                        </ul>
+                        {% endif %} 
+
+                </div>    
+                {% if m.MotionText %}
+                <div class='TextContent' style='margin-top: 15px;'>
+                    <ul class='Text'>
+                            <li>{{ m.MotionText|safe }}</li>
+                    </ul>
+                </div>
+                {% endif %}
+                {% include 'utils/motion_outline.html' %}
+            {% endwith %}
+            </div>  
+                    <ul> 
+                        <li>{{ v.Person_obj.FullName }}:</li>
+                        <li><span {% if v.VoteValueName == 'Yea' %}style='background-color:#0b559a; color:white; padding: 5px;  border-radius:5px;'{% elif v.VoteValueName == 'Nay' %}style='background-color:#ed7600; color: white; padding: 5px; border-radius:5px;'{% endif %}>{{ v.VoteValueName }}</span></li>
+                        {% if myVotes and v.Motion_obj %}
+                        {% with myVote=myVotes|get_item:v.Motion_obj.id %}
+                        {% if myVote %}
+                        </ul>
+                        <ul>
+                        <li>You:</li>
+                        <li><span {% if myVote == 'Yea' %}style='background-color:#0b559a; color:white; padding: 5px;  border-radius:5px;'{% elif myVote == 'Nay' %}style='background-color:#ed7600; color: white; padding: 5px; border-radius:5px;'{% endif %}>{{ myVote }}</span></li>
+                        {% endif %}
+                        {% endwith %}
+                        {% endif %}
+                    </ul>
+            </div>
+            </div>
+        {% else %}
+            <div class='votePic'>
+                {% if v.Person_obj.AvatarLink %}
+                    <a href={{ v.Person_obj.get_absolute_url }}><img class='votePic' src={{ v.Person_obj.AvatarLink }}></a>
+                {% else %}
+                    <img class='votePic' src={% static 'img/user-coloured.png' %}>
+                {% endif %}
+            </div>
+            <div class='profileInfo'>
+                {% if personUpdate %}
+                <div><h3><a href={{ personUpdate.Person_obj.get_absolute_url }}>{{ personUpdate.Person_obj.LastName }}, {{ personUpdate.Person_obj.FirstName }}</a></h3></div>
+                <ul>
+                    <li>{{ personUpdate|get_updated_field:'Party_obj,Name' }}</li>
+                    <div class='partyColour' style='background-color:{{ personUpdate|get_updated_field:'Party_obj,Colour' }}'></div>
+                    <li>{{ personUpdate.ProvState_obj }}</li>
+                    <li>{{ personUpdate|get_updated_field:'District_obj,Name' }}</li>
+                    <li>{{ personUpdate|get_updated_field:'ProvState_obj,Name' }}</li>
+                </ul>
+                {% else %}
+                <div><h3>{{ v.PersonOfficialFullName }}</h3></div>
+                {% endif %}
+            </div>
+            <div class='Info' style='min-width:70px; max-width:110px; margin:0px; left:-10px;'>
+                <div class='Details'>
+                    <ul>
+                        <li class='vote-{{ v.VoteValueName }}'><span {% if v.VoteValueName == 'Yea' %}style='background-color:#0b559a; color:white; padding: 5px;  border-radius:5px;'{% elif v.VoteValueName == 'Nay' %}style='background-color:#ed7600; color: white; padding: 5px; border-radius:5px;'{% endif %}>{{ v.VoteValueName }}</span></li>
+                        {% if myVotes and v.motion %}
+                        {% with myVote=myVotes|get_item:v.motion.id %}
+                        {% if myVote %}
+                        <li style='margin-top:10px; margin-bottom:10px;'>You:</li>
+                        <li class='vote-{{ myVote }}'><span {% if myVote == 'Yea' %}style='background-color:#0b559a; color:white; padding: 5px;  border-radius:5px;'{% elif myVote == 'Nay' %}style='background-color:#ed7600; color: white; padding: 5px; border-radius:5px;'{% endif %}>{{ myVote }}</span></li>
+                        {% endif %}
+                        {% endwith %}
+                        {% endif %}
+                    </ul>
+                </div>   
+            </div>
+        {% endif %}     
+
+    </div>
+    <div class='bottomDivider'></div>

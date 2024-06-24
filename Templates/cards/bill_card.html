@@ -1,0 +1,81 @@
+{% load static %}
+<div class='card bill' id='b-{{ b.id }}'>
+    {% include 'utils/person.html' %}
+    
+    <div class='cardContent'>
+    <div class='Info'>
+        <div class='Code'>
+            <h2><a href='{{ b.get_absolute_url }}'>{% if b.Government_obj.gov_level != 'Federal' %}{{ b.Region_obj.Name }}{% endif %} Bill {{ b.NumberCode }}</a></h2>
+            <div class='Parl'>
+                <div>{{ b.Government_obj.GovernmentNumber|get_ordinal }} Parl. {{ b.Government_obj.SessionNumber|get_ordinal }} Sess.</div>
+                <div>{{ updatedB|get_updated_field:'LatestBillEventDateTime'|dt_object }}</div>  
+            </div>
+        </div>
+        <div class='Details'>
+            {% if b.Title %}
+                <div class='title'><a href='{{ b.get_absolute_url }}' >{{ b.Title }}</a></div>
+            {% else %}
+                <div class='title'><a href='{{ b.get_absolute_url }}' >{{ b.LongTitle }}</a></div>
+            {% endif %}
+            <ul>
+                {% comment %}
+                {% if updatedV and not isMobile %}<li class='subtitle' style='display:inline-block; margin-right:20px;'>{{ updatedV|get_updated_field:'Version' }}</li>{% endif %}
+                {% endcomment %}
+                <li class='subtitle shorten1' style='display:inline-block; margin-right: 20px;'><span>{% if updatedB|get_updated_field:'Status' %}{{ updatedB|get_updated_field:'Status' }}{% else %}{{ updatedB|get_updated_field:'LatestCompletedMajorStageNameWithChamberSuffix' }}{% endif %}</span></li>
+                
+                {% comment %}
+                
+                {% if updatedV|get_updated_field:'TextHtml' %}
+                <li class='subtitle2' style='display:inline-block;'><a href='{{ b.get_absolute_url }}?view=LatestText'>Read Bill &nbsp;|&nbsp;</a></li>
+                {% endif %}
+                {% endcomment %}
+
+                <li class='subtitle2' style='display:inline-block;'><a href='{{ b.get_absolute_url }}?view=LatestText'>Read Bill &nbsp;|&nbsp;</a></li>
+                <li class='subtitle2' style='display:inline-block; '><a href={{ b.LegisLink }}>Government Page</a></li>
+            </ul>
+        </div>
+        
+        <div class='TextContent'>
+            <ul class='Text'>
+                {% with sum=b.hasSummarySpren %}
+                {% if sum %}
+                    <li {% if request.user_agent.is_mobile %}style='white-space: pre-wrap; line-height:128% !important;'{% endif %}>{{ sum.content }}</li>
+                {% elif updatedB|get_updated_field:'Summary' %}
+                    <li {% if request.user_agent.is_mobile %}style='line-height:128% !important;'{% endif %}>{{ updatedB|get_updated_field:'Summary'|safe }}</li>
+                {% endif %}
+                {% endwith %}
+                
+            </ul>
+           
+
+            <!-- <a href='/bill/{{ b.ParliamentNumber }}/{{ b.SessionNumber }}/{{ b.NumberCode }}'>More Info</a> -->
+        </div>
+        <div class='billProgress'>
+        {% if b.Government_obj.Region_obj.Name == 'Canada' %}
+        <ul>
+            <li title="House of Commons First Reading {{ updatedB|get_updated_field:'PassedFirstChamberFirstReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedFirstChamberFirstReadingDateTime' %}class='houseComplete'{% endif %}>H1</li>
+            <li title="House of Commons Second Reading {{ updatedB|get_updated_field:'PassedFirstChamberSecondReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedFirstChamberSecondReadingDateTime' %}class='houseComplete'{% endif %}>H2</li>
+            <li title="House of Commons Third Reading {{ updatedB|get_updated_field:'PassedFirstChamberThirdReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedFirstChamberThirdReadingDateTime' %}class='houseComplete'{% endif %}>H3</li>
+            {% if b.has_senate %}
+            <li title="Senate First Reading {{ updatedB|get_updated_field:'PassedSecondChamberFirstReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedSecondChamberFirstReadingDateTime' %}class='senateComplete'{% endif %}>S1</li>
+            <li title="Senate Second Reading {{ updatedB|get_updated_field:'PassedSecondChamberSecondReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedSecondChamberSecondReadingDateTime' %}class='senateComplete'{% endif %}>S2</li>
+            <li title="Senate Third Reading {{ updatedB|get_updated_field:'PassedSecondChamberThirdReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedSecondChamberThirdReadingDateTime' %}class='senateComplete'{% endif %}>S3</li>
+            {% endif %}
+            <li title="Royal Assent {{ updatedB|get_updated_field:'ReceivedRoyalAssentDateTime' }}" {% if updatedB|get_updated_field:'ReceivedRoyalAssent' == 'true' %}class='assentComplete'{% endif %}>RA</li>
+        </ul>
+        {% else %}
+        <ul>
+            <li title="House of Commons First Reading {{ updatedB|get_updated_field:'PassedFirstChamberFirstReadingDateTime' }}" class='chamberComplete'>Introduced</li>
+            <li title="House of Commons Second Reading {{ updatedB|get_updated_field:'PassedFirstChamberSecondReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedFirstChamberSecondReadingDateTime' %}class='chamberComplete'{% endif %}>House</li>
+            <li title="Senate First Reading {{ updatedB|get_updated_field:'PassedSecondChamberFirstReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedSecondChamberFirstReadingDateTime' %}class='chamberComplete'{% endif %}>Senate</li>
+            <li title="Senate Second Reading {{ updatedB|get_updated_field:'PassedSecondChamberSecondReadingDateTime' }}" {% if updatedB|get_updated_field:'PassedSecondChamberSecondReadingDateTime' %}class='chamberComplete'{% endif %}>President</li>
+            <li title="Royal Assent {{ updatedB|get_updated_field:'ReceivedRoyalAssentDateTime' }}" {% if updatedB|get_updated_field:'ReceivedRoyalAssent' == 'true' %}class='assentComplete'{% endif %}>Law</li>
+        </ul>
+
+        {% endif %}
+        </div>
+    </div>
+    </div>
+
+</div>
+    {% include 'utils/reaction_bar.html' %}

@@ -1,0 +1,67 @@
+
+
+
+
+.indexMobile, .searchMobile, .notificationsMobile{
+  background-color: #222222;
+  border: 1px solid #4f4e4e;
+}
+#mobileNavigation{
+    
+  border-left: 0px solid #4f4e4e;
+  border-right: 0px solid #4f4e4e;
+  border-top: 1px solid #4f4e4e;
+  border-radius: 40px;
+}
+/* #navBar .shadow{
+    background: linear-gradient(to bottom, transparent, rgb(56, 55, 55));
+} */
+#navBar > ul{
+  /* border: 1px solid #4f4e4e; */
+  background: linear-gradient(to bottom, #222222, rgb(56, 55, 55));
+}
+#navBar > ul > li{
+    border-right: 1px solid #4f4e4e;
+    background: linear-gradient(to bottom, #222222, rgb(56, 55, 55)) !important;
+  }
+#navBar li.active{
+  /* background: none; */
+  /* background: rgb(56, 55, 55); */
+  /* border-bottom: 0px solid #4f4e4e; */
+  background: linear-gradient(to top, #222222, rgb(56, 55, 55)) !important;
+  border-bottom: 0px solid transparent;
+}
+#navBar ul:has(.showForm){
+    border-bottom: 1px solid #4f4e4e !important;
+  background: #222222;
+}
+#feedTop{
+  border-left: 1px solid #4f4e4e;
+  border-right: 1px solid #4f4e4e;
+  border-top: 2px solid #4f4e4e;
+}
+#feed{
+    background-color: #222222;
+    /* border: 0px solid #4f4e4e; */
+    /* left: 1px; */
+}
+.reactionBar{
+    border-bottom: 2px solid #3a3939 !important;
+    }
+  .reactionBar ul > li{
+    border: 2px solid #3a3939 !important;
+  }
+  
+/* .indexMobile{
+    background-color: #222222;
+} */
+.pageDivider{
+  border-bottom: 2px solid #4f4e4e;
+}
+#bottomNavBar > ul{
+    background-color: #222222;
+    /* border-bottom: 1.5px solid red; */
+}
+#bottomNavBar .shadow{
+  background: linear-gradient(to top, transparent, #474646);
+}

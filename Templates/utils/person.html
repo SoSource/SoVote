@@ -1,0 +1,32 @@
+{% load static %}
+
+<div class='sponsor'>
+    <div>
+    {% if b.Person_obj %}
+            <a href={{ b.person.get_absolute_url }}><img class='sponsorPic' style='border-bottom:{% if request.user_agent.is_mobile %}9px{% else %}4px{% endif %} solid {{ b.Person_obj.Party_obj.Colour }};' src={% if b.Person_obj.AvatarLink %}{{ b.Person_obj.AvatarLink }}{% else %}{% static 'img/user-coloured.png' %}{% endif %}></a>
+            <div class='sponsorInfo'>
+                <div>Sponsor:</div>
+                <div><h3><a href={{ b.Person_obj.get_absolute_url }}>{{ b.Person_obj.FullName }}</a></h3></div>
+            </div>
+    {% elif b.Sponsor_obj %}
+            <a href={{ b.Sponsor_obj.get_absolute_url }}><img class='sponsorPic' style='border-bottom:{% if request.user_agent.is_mobile %}9px{% else %}4px{% endif %} solid {{ b.Sponsor_obj.Party_obj.Colour }};' src={% if b.Sponsor_obj.AvatarLink %}{{ b.Sponsor_obj.AvatarLink }}{% else %}{% static 'img/user-coloured.png' %}{% endif %}></a>
+            <div class='sponsorInfo'>
+                <div>Sponsor:</div>
+                <div><h3><a href={{ b.Sponsor_obj.get_absolute_url }}>{{ b.Sponsor_obj.FullName }}</a></h3></div>
+            </div>
+    {% else %}
+        <img class='sponsorPic' src={% static 'img/user-coloured.png' %}>
+        <div class='sponsorInfo'>
+            <div>Sponsor:</div>
+            <div><h3>{{ b.SponsorPersonName }}</h3></div>
+        </div>
+    {% endif %}
+    {% if b.CoSponsor_objs.all %}
+        <ul style='padding-left:10px; margin:0px'>
+        {% for s in b.CoSponsor_objs.all %}
+            <li><a href={{ s.get_absolute_url }}>{{ s.FullName }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    </div>
+    </div>

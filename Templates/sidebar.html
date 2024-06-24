@@ -1,0 +1,278 @@
+{% load static %}
+<div id='sidebar'>
+    
+    <div class='header' id='notifications'>Notifications<span onclick='sidebarSort("notifications")'>clear</span></div>
+    <div>
+        <ul class='notifications' id='firstPane'>
+                            
+                
+            {% for n in notifications %}
+                <li class='notification' id={{ n.id }}><a href={{ n.link }} style='text-decoration:none;'>{{ n.title }}</a><span onclick="removeNotification('{{ n.id }}')">X</span></li>
+            {% endfor %} 
+            {% comment %}
+            <br>
+            <li onclick="addNotification('go')">add test notification</li>
+            {% endcomment%}
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+    
+    {% if request.user.is_authenticated %}
+    <div class='header' id='notifications'>Messages<span onclick='sidebarSort("notifications")'>clear</span></div>
+    <div>
+        <ul class='notifications' id='secondPane'>
+            <li>Coming Soon</li>
+            <li></li>
+            <li></li>
+            {% comment %}
+            <li>MP|Pierre Poilievre</li>
+            <li onclick="addNotification('go')">add test notification</li>
+            {% endcomment %}
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+    {% endif %}
+{% if debate or committee %}
+    {% if debateUpdate|get_updated_field:'People_json' or committee.TermsText %}
+    <div class='header' id='topics'>Topics <span onclick='sidebarSort("topics-alpha")'>sort</span></div>
+    <div>
+        <ul class='showFullText' id='thirdPane' >
+            
+            {% for key, value in debateUpdate|list_all_terms %}
+                <li><a href='{{ debate.get_absolute_url }}/?topic={{ key }}' title='{{ key }}'>{{ key|truncatewords:12|title }}  <span>({{ value }})</span></a></li>
+            {% endfor %}
+
+            {% comment %}
+            
+            {% for key, value in committee|list_all_terms %}
+                <li><a href='{{ committee.get_absolute_url }}/?topic={{ key }}'>{{ key }}  <span>({{ value }})</span></a></li>
+            {% endfor %}
+
+
+
+                {% for key, value in hansard.list_ten_terms %}
+                    <li><a href='{{ hansard.get_absolute_url }}/?topic={{ key }}'>{{ key }}  <span>({{ value|add:'1' }})</span></a></li>
+                {% endfor %}
+                {% if hansard.list_all_terms|length > 10 %}
+                <div class='readMore' onclick='show_all("h-{{ hansard.id }}", "terms")'>See All Topics</div>
+                {% endif %}
+
+                
+                {% for key, value in committee.list_ten_terms %}
+                    <li><a href='{{ committee.get_absolute_url }}/?topic={{ key }}'>{{ key }}  <span>({{ value|add:'1' }})</span></a></li>
+                {% endfor %}
+                {% if committee.list_all_terms|length > 10 %}
+                <div class='readMore' onclick='show_all("c-{{ committee.id }}", "terms")'>See All Topics</div>
+                {% endif %}
+            {% endcomment %}
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+    
+    <!-- <br> -->
+    <div class='header' id='speakers'>Speakers <span onclick="sidebarSort('speakers-alpha')">sort</span></div>
+    <div>
+        <ul id='fourthPane'>
+    {% else %}
+    <div class='header' id='speakers'>Speakers <span onclick='sidebarSort("speakers-alpha")'>sort</span></div>
+    <div>
+        <ul class='showFullText' id='fourthPane'>
+    {% endif %}
+
+            {% for key, value in debateUpdate|list_all_people %}
+                <li><a href='{{ debate.get_absolute_url }}/?speaker={{ key.id }}'>{{ key.LastName }}, {{ key.FirstName }} <span>({{ value }})</span></a></li>
+            {% endfor %}
+
+            
+            {% for key, value in committee.list_all_people %}
+            <li><a href='{{ committee.get_absolute_url }}/?speaker={{ key.id }}'>{{ key.LastName }}, {{ key.FirstName }} <span>({{ value }})</span></a></li>
+            {% endfor %}
+
+
+
+            {% comment %}
+                {% for key, value in hansard.list_people %}
+                <li><a href='{{ hansard.get_absolute_url }}/?speaker={{ key.id }}'>{{ key.last_name }}, {{ key.first_name }} <span>({{ value }})</span></a></li>
+                {% endfor %}
+                {% if hansard.people.all|length > 10 %}
+                <div class='readMore' onclick='show_all("h-{{ hansard.id }}", "people")'>See All Speakers</div>
+                {% endif %}
+
+                
+                {% for key, value in committee.list_people %}
+                <li><a href='{{ committee.get_absolute_url }}/?speaker={{ key.id }}'>{{ key.last_name }}, {{ key.first_name }} <span>({{ value }})</span></a></li>
+                {% endfor %}
+                {% if committee.people.all|length > 10 %}
+                <div class='readMore' onclick='show_all("c-{{ committee.id }}", "people")'>See All Speakers</div>
+                {% endif %}
+            {% endcomment %}
+        </ul>    
+        <div class='fadeOut'></div>
+    </div>
+
+{% elif personTerms %}
+    <div class='header'>{{ person.full_name }}</div>
+
+    <div>
+        <ul class='showFullText' id='thirdPane'>
+            
+            {% for key, value in personTerms %}
+                <li><a href='{{ person.get_absolute_url }}/?topic={{ key }}'>{{ key|title }} <span>({{ value }})</span></a></li>
+            {% endfor %}
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+
+
+{% elif reading %}
+    <div class='header'>Table of Contents</div>
+    <div>
+        <ul class='showFullText' id='thirdPane'>
+            {% for key, value in updatedVersion.BillVersion_obj.get_nav %}
+            <li class='tocItem' onclick='tocNav(`{{ value }}`)'>{{ key }}</li>
+            {% endfor %}
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+
+{% elif committeeList %}
+    <!-- <br> -->
+    {% if filter == 'House' %}
+        <div class='header'>House Committees</div>
+    {% elif filter == 'Senate' %}
+        <div class='header'>Senate Committees</div>
+    {% else %}
+        <div class='header'>Committees</div>
+    {% endif %}
+    <div>
+        <ul class='showFullText' id='thirdPane'>
+            {% for c in committeeList %}
+            <li style='width:80%;'><a href={{ c.get_absolute_url }}>{{ c.Title }} ({{ c.code }})</a></li>
+            {% endfor %}
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+
+{% elif has_reps %}
+    
+
+    
+    <div class='header'>Representatives</div>
+    <div>
+        <ul class='showFullText' id='thirdPane'>
+
+            {% if MP_role %}
+                <li><a href=''>{{ MP_role.Position|get_role_short }} | {{ MP_role.Person_obj.FullName }}</a></li>
+            {% endif %}
+            {% if MPP_role %}
+                <li><a href=''>{{ MPP_role.Position|get_role_short }} | {{ MPP_role.Person_obj.FullName }}</a></li>
+            {% endif %} 
+            {% if Mayor_role %}
+                <li><a href=''>{{ Mayor_role.Position|get_role_short }} | {{ Mayor_role.Person_obj.FullName }}</a></li>
+            {% endif %}
+            {% if Councillor_role %}
+                <li><a href=''>{{ Councillor_role.Position|get_role_short }} | {{ Councillor_role.Person_obj.FullName }}</a></li>
+            {% endif %}
+
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+{% elif updatedAgenda %}
+    
+    {% include 'utils/trending_widget.html' %}
+
+    {% include 'utils/agenda_widget.html' %}
+
+    {% comment %}
+    {% if request.user.is_god %}
+    <div class='header'>Commands</div>
+    <div>
+        <ul class='commands' id='fourthPane'>
+                             
+            <li><a href='/utils/mps_update'>Get All MPs</a></li>
+            <li><a href='/utils/senators_update'>Get All Senators</a></li>
+            <br>
+            <li><a href='/utils/get_todays_bills'>Get Todays Bills</a></li>
+            <li><a href='/utils/get_latest_bills'>Get Latest Bills</a></li>
+            <!-- <li><a href='/utils/get_all_bills/session'>Get Session Bills</a></li> -->
+            <li><a href='/utils/get_all_bills/alltime'>Get All Bills</a></li>
+            <li><a href='/utils/get_all_bills/session'>Get Session Bills</a></li>
+            <br>
+            <li><a href='/utils/get_federal_candidates'>Get Federal Candidates</a></li>
+            <br>
+            <li><a href='/utils/get_latest_house_hansard'>Get Latest House Hansard</a></li>
+            <!-- <li><a href='/utils/get_session_hansards'>Get Session House Hansards</a></li> -->
+            <li><a href='/utils/get_all_hansards'>Get All House Hansards</a></li>
+            <li><a href='/utils/get_all_senate_hansards'>Get All Senate Hansards</a></li>
+            <br>
+            <li><a href='/utils/get_all_house_motions'>Get All House Motions</a></li>
+            <li><a href='/utils/get_session_senate_motions'>Get Session Senate Motions</a></li>
+            <br>
+            <li><a href='/utils/get_latest_house_committees'>Get Latest House Committees</a></li>
+            <li><a href='/utils/get_latest_senate_committees/past'>Get Latest Senate Committees</a></li>
+            <li><a href='/utils/get_all_senate_committees'>Get All Senate Committees</a></li>
+            <br>
+            <li><a href='/utils/daily_update'>Daily Update</a></li>
+            <li><a href='/utils/all_agendas'>Get All Agendas</a></li>
+            <li><a href='/utils/set_party_colours'>Set Party Colours</a></li>
+            <br>
+            <li><a href='/utils/build_database'>Build Database</a></li>
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+    {% endif %}
+    {% endcomment %}
+{% else %}
+
+    {% if request.user.is_god %}
+    <h2>Happening</h2>
+    
+    <br>
+    <div>
+        <ul class='commands' id='thirdPane'>
+            <li><a href='/utils/mps_update'>Get All MPs</a></li>
+            <li><a href='/utils/senators_update'>Get All Senators</a></li>
+            <br>
+            <li><a href='/utils/get_todays_bills'>Get Todays Bills</a></li>
+            <li><a href='/utils/get_latest_bills'>Get Latest Bills</a></li>
+            <!-- <li><a href='/utils/get_all_bills/session'>Get Session Bills</a></li> -->
+            <li><a href='/utils/get_all_bills/alltime'>Get All Bills</a></li>
+            <br>
+            <li><a href='/utils/get_federal_candidates'>Get Federal Candidates</a></li>
+            <br>
+            <li><a href='/utils/get_latest_house_hansard'>Get Latest House Hansard</a></li>
+            <!-- <li><a href='/utils/get_session_hansards'>Get Session House Hansards</a></li> -->
+            <li><a href='/utils/get_all_hansards'>Get All House Hansards</a></li>
+            <li><a href='/utils/get_all_senate_hansards'>Get All Senate Hansards</a></li>
+            <br>
+            <li><a href='/utils/get_all_house_motions'>Get All House Motions</a></li>
+            <li><a href='/utils/get_session_senate_motions'>Get Session Senate Motions</a></li>
+            <br>
+            <li><a href='/utils/get_latest_house_committees'>Get Latest House Committees</a></li>
+            <li><a href='/utils/get_latest_senate_committees'>Get Latest Senate Committees</a></li>
+            <br>
+            <li><a href='/utils/daily_update'>Daily Update</a></li>
+            <li><a href='/utils/set_party_colours'>Set Party Colours</a></li>
+            <br>
+            <li><a href='/utils/build_database'>Build Database</a></li>
+
+        </ul>
+        <div class='fadeOut'></div>
+    </div>
+    {% endif %}
+
+{% endif %}
+</div>
+
+
+<!-- this should be home but didn't work there for some reason -->
+<!-- <script
+    src="https://code.jquery.com/jquery-3.2.1.min.js"
+    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+    crossorigin="anonymous"></script> -->
+<!-- <script src="{% static 'js/default.js' %}"></script> -->
+
+<script>
+    // document.onscroll = function() { alert('Works in Chrome!'); };
+    
+</script>
