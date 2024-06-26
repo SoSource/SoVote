@@ -713,6 +713,7 @@ def get_operatorData():
             data_string = decrypt(encrypted_data)
     except Exception as e:
         print(str(e))
+        data_string = {}
         # server_path = Path(homepath + '/SoNodeServer')
         # server_path.mkdir(parents=True, exist_ok=True)
         # data_string = json.dumps({}, indent=4)

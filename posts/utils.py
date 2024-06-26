@@ -340,9 +340,10 @@ def get_cookies(request, c, country=None):
         userData = None
     # print('utils.py UserData', userData)
     try:
-        sonet = Sonet.objects.first()
+        sonet = Sonet.objects.all()[0]
     except:
-        sonet = {Sonet()}
+        sonet = {'title' : 'sonet', 'LogoLink' : "/static/img/default_logo.png"}
+    print('sonet', sonet)
     context = {
         "sonet": sonet,
         "userData": userData,

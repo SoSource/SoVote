@@ -1313,6 +1313,7 @@ def receive_user_login_view(request):
                         else:
                             setattr(user, key, value)
                 print('save')
+                user.slug = 'tmp'
                 user.save(share=False)
                 # print('new user', user)
                 wallet = Wallet()
@@ -1391,10 +1392,10 @@ def receive_user_login_view(request):
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     print('user logged in')
                     try:
-                        sonet = Sonet.objects.first()
+                        sonet = get_signing_data(Sonet.objects.all()[0])
                     except:
-                        sonet = Sonet(id=uuid.uuid4().hex, created=now_utc())
-                    return JsonResponse({'message' : 'User Created', 'userData' : get_user_sending_data(user), 'sonet' : get_user_sending_data(sonet)})
+                        sonet = None
+                    return JsonResponse({'message' : 'User Created', 'userData' : get_signing_data(user), 'sonet' : sonet})
                 else:
                     try:
                         user.delete()

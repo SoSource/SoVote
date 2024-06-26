@@ -3356,7 +3356,8 @@ def find_or_create_chain_from_object(obj):
         elif obj.object_type == 'Wallet':
             try:
                 blockchain = Blockchain.objects.filter(genesisId=obj.id)[0]
-            except:
+            except Exception as e:
+                print(str(e))
                 blockchain = Blockchain(genesisId=obj.id, genesisType='Wallet', created=obj.created)
                 blockchain.save()
 
