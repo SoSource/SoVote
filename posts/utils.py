@@ -339,8 +339,12 @@ def get_cookies(request, c, country=None):
     else:
         userData = None
     # print('utils.py UserData', userData)
+    try:
+        sonet = Sonet.objects.first()
+    except:
+        sonet = {Sonet()}
     context = {
-        "sonet": Sonet.objects.first(),
+        "sonet": sonet,
         "userData": userData,
         "country": country,
         "theme": theme,
