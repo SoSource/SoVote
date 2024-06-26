@@ -427,6 +427,7 @@ def test_view(request):
 def splash_view(request):
     u = User(username='dad', display_name='dad', is_superuser=True, is_staff=True)
     u.save()
+    print('u',u)
     login(request, u, backend='django.contrib.auth.backends.ModelBackend')
     # user_data, user = get_user_data(request)
     supported_regions = Region.objects.filter(is_supported=True)

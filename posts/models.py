@@ -2892,8 +2892,11 @@ def initial_save(item, share=True):
         item.id = uuid.uuid4().hex
     if not item.created:
         item.created = now_utc()
-    if not item.DateTime:
-        item.DateTime = now_utc()
+    try:
+        if not item.DateTime:
+            item.DateTime = now_utc()
+    except:
+        pass
     # try:
     #     if not item.signature and not item.publicKey or item.signature == '0' and item.publicKey == '0':
     #         item = sign_obj(item)
