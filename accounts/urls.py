@@ -23,6 +23,7 @@ urlpatterns = [
     re_path('reaction/(?P<iden>[\w-]+)/(?P<item>[\w-]+)', account_views.reaction_view),
     re_path('get_region/(?P<country>(.*))', account_views.get_region_modal_view),
 
+    path('set_sonet', account_views.set_sonet_view),
     path('receive_test_data', account_views.receive_test_data_view),
 
 ]

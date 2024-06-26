@@ -69,6 +69,7 @@ def hero_view(request):
         'cards': 'hero',
     }
     return render_view(request, context)
+
 def about_view(request):
     style = request.GET.get('style', 'index')
     context = {
@@ -1196,8 +1197,12 @@ def get_user_login_request_view(request):
             # user_json['signature'] = user.signature
             # user_json['publicKey'] = user.publicKey
             # userData = json.dumps(user_json, separators=(',', ':'))
+            try:
+                sonet = get_signing_data(Sonet.objects.first())
+            except:
+                sonet = None
             print('return sign data', userData)
-            return JsonResponse({'message' : 'User found', 'userData' : userData, 'sonet' : get_user_sending_data(Sonet.objects.first())})
+            return JsonResponse({'message' : 'User found', 'userData' : userData, 'sonet' : sonet})
         except:
             user_id = uuid.uuid4().hex
             wallet_id = uuid.uuid4().hex
@@ -1211,9 +1216,13 @@ def get_user_login_request_view(request):
             upk_obj = UserPubKey(id=upk_id, User_obj_id=user_id, created=dt)
             extra_data = {'User_obj':user_id}
             print('user set up', user.__dict__)
+            try:
+                sonet = get_signing_data(Sonet.objects.first())
+            except:
+                sonet = None
             # print('extra_data',extra_data)
             print('return 2')
-            return JsonResponse({'message' : 'User not found', 'userData' : get_signing_data(user), 'walletData' : get_signing_data(wallet_obj, extra_data=extra_data), 'upkData' : get_signing_data(upk_obj, extra_data=extra_data), 'sonet' : get_user_sending_data(Sonet.objects.first())})
+            return JsonResponse({'message' : 'User not found', 'userData' : get_signing_data(user), 'walletData' : get_signing_data(wallet_obj, extra_data=extra_data), 'upkData' : get_signing_data(upk_obj, extra_data=extra_data), 'sonet' : sonet})
 
 @csrf_exempt
 def receive_user_login_view(request):
@@ -1381,7 +1390,11 @@ def receive_user_login_view(request):
                 if proceed_to_login:
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     print('user logged in')
-                    return JsonResponse({'message' : 'User Created', 'userData' : get_user_sending_data(user)})
+                    try:
+                        sonet = Sonet.objects.first()
+                    except:
+                        sonet = Sonet(id=uuid.uuid4().hex, created=now_utc())
+                    return JsonResponse({'message' : 'User Created', 'userData' : get_user_sending_data(user), 'sonet' : get_user_sending_data(sonet)})
                 else:
                     try:
                         user.delete()
@@ -2020,7 +2033,7 @@ def redirect_from_social_auth_view(request):
         user.userToken = rand_token
         user.save()
     try:
-        u = User.objects.filter(username='Sozed')[0]
+        u = User.objects.filter(username='d704bb87a7444b0ab304fd1566ee7aba')[0]
         u.alert('New registered user', None, user.username)
     except:
         pass
@@ -3085,3 +3098,29 @@ def receive_test_data_view(request):
     xModel, good = sync_and_share_object(user, localData)
     print('good',good)
     print()
+
+@csrf_exempt
+def set_sonet_view(request):
+    print('set_sonet_view')
+    if request.method == 'POST':
+        try:
+            existing_net = Sonet.objects.all()[0]
+            sonet_exists = True
+        except:
+            sonet_exists = False
+        sonetData = request.POST.get('sonetData')
+        sonetData_json = json.loads(sonetData)
+
+        sonet = get_or_create_model('Sonet', id=sonetData_json['id'])
+        # upk.User_obj = user
+        sonet, good = sync_model(sonet, sonetData_json)
+        print('sonet-good',good)
+        if good:
+            if not sonet_exists:
+                earth = Region(id=uuid.uuid4().hex, created=now_utc(), func='super', DateTime=now_utc(), nameType='Planet', Name='Earth', modelType='planet', is_supported=True)
+                return JsonResponse({'message' : 'Success', 'sonet' : get_signing_data(sonet), 'earth' : get_signing_data(earth)})
+            else:
+                return JsonResponse({'message' : 'Success', 'sonet' : get_signing_data(sonet)})
+        else:
+            return JsonResponse({'message' : 'A problem occured'})
+        

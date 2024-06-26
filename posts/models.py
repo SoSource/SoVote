@@ -17,7 +17,6 @@ from dateutil import tz
 from django.utils import timezone
 import decimal
 import operator
-from keybert import KeyBERT
 from nltk.corpus import stopwords
 import hashlib
 import ast
@@ -78,7 +77,6 @@ class BaseModel(models.Model):
     func = models.CharField(max_length=50, default="")
     blockchainId = models.CharField(max_length=50, default="")
     locked_to_chain = models.BooleanField(default=False)
-    # modelVersion = models.CharField(max_length=50, default="v1")
     publicKey = models.CharField(max_length=200, default="")
     signature = models.CharField(max_length=200, default="")
     chamber = models.CharField(max_length=100, default="", blank=True, null=True)
@@ -90,22 +88,21 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
 
-class Government(BaseModel):
+class Government(models.Model):
     object_type = 'Government'
     blockchainType = 'Region'
-    # blockchainId = models.CharField(max_length=50, default="0")
-    # locked_to_chain = models.BooleanField(default=False)
     modelVersion = models.CharField(max_length=50, default="v1")
-    # id = models.CharField(max_length=50, default="0", primary_key=True)
-    # created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    # automated = True
-    # publicKey = models.CharField(max_length=200, default="0")
-    # signature = models.CharField(max_length=200, default="0")
-    # chamber = models.CharField(max_length=100, default="", blank=True, null=True)
-    # Region_obj = models.ForeignKey('accounts.Region', related_name='gov_region_obj', blank=True, null=True, on_delete=models.RESTRICT)
-    # Country_obj = models.ForeignKey('accounts.Region', related_name='gov_country_obj', blank=True, null=True, on_delete=models.CASCADE)
+    id = models.CharField(max_length=50, default="0", primary_key=True)
+    created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    func = models.CharField(max_length=50, default="")
+    blockchainId = models.CharField(max_length=50, default="")
+    locked_to_chain = models.BooleanField(default=False)
+    publicKey = models.CharField(max_length=200, default="")
+    signature = models.CharField(max_length=200, default="")
+    Region_obj = models.ForeignKey('posts.Region', related_name='%(class)s_region_obj', blank=True, null=True, on_delete=models.CASCADE)
+    Country_obj = models.ForeignKey('posts.Region', related_name='%(class)s_country_obj', blank=True, null=True, on_delete=models.CASCADE)
+    
     last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
-    # Region_obj = models.ForeignKey('accounts.Region', related_name='region_obj', blank=True, null=True, on_delete=models.RESTRICT)
     GovernmentNumber = models.IntegerField(default=0)
     SessionNumber = models.IntegerField(default=1)
     StartDate = models.DateTimeField(auto_now=False, auto_now_add=False, blank=False, null=True)
@@ -2615,48 +2612,50 @@ def get_keywords(obj, post, text):
             post = Post.objects.filter(pointerId=obj.id)[0]
         except:
             pass
-    # start_time = datetime.datetime.now()
-    # print('start', start_time)
-    kw_model = KeyBERT()
-    # end_time = datetime.datetime.now() - start_time
-    # print('time1', end_time)
-    stop_w = []
-    # for i in stop_words:
-    #     stop_w.append(i)
-    for i in skipwords:
-        stop_w.append(i)
-    obj.keyword_array = []
-    x = kw_model.extract_keywords(text, top_n=10, keyphrase_ngram_range=(2, 2), stop_words=stop_w)
-    n = 0
-    # print(x)
-    # end_time = datetime.datetime.now() - start_time
-    # print('time2', end_time)
-    terms = ''
-    for i, r in x:
-        if i not in stop_w and i not in obj.keyword_array and n <= 7 and not i.isnumeric():
-            obj.keyword_array.append(i)
-            if post:
-                post.keyword_array.append(i)
-            n += 1
-            terms = terms + i + ' '
-            # print(i, r)
-    # end_time = datetime.datetime.now() - start_time
-    # print('time3', end_time)
-    x = kw_model.extract_keywords(text, top_n=10, keyphrase_ngram_range=(1, 1), stop_words=stop_w)
-    n = 0
-    # print(x)
-    # end_time = datetime.datetime.now() - start_time
-    # print('time4', end_time)
-    for i, r in x:
-        if i not in stop_w and i not in terms and n <= 7 and not i.isnumeric():
-            obj.keyword_array.append(i)
-            if post:
-                post.keyword_array.append(i)
+    try:
+        from keybert import KeyBERT
+        kw_model = KeyBERT()
+        # end_time = datetime.datetime.now() - start_time
+        # print('time1', end_time)
+        stop_w = []
+        # for i in stop_words:
+        #     stop_w.append(i)
+        for i in skipwords:
             stop_w.append(i)
-            n += 1
-            # print(i, r)
-    # end_time = datetime.datetime.now() - start_time
-    # print('time5', end_time)
+        obj.keyword_array = []
+        x = kw_model.extract_keywords(text, top_n=10, keyphrase_ngram_range=(2, 2), stop_words=stop_w)
+        n = 0
+        # print(x)
+        # end_time = datetime.datetime.now() - start_time
+        # print('time2', end_time)
+        terms = ''
+        for i, r in x:
+            if i not in stop_w and i not in obj.keyword_array and n <= 7 and not i.isnumeric():
+                obj.keyword_array.append(i)
+                if post:
+                    post.keyword_array.append(i)
+                n += 1
+                terms = terms + i + ' '
+                # print(i, r)
+        # end_time = datetime.datetime.now() - start_time
+        # print('time3', end_time)
+        x = kw_model.extract_keywords(text, top_n=10, keyphrase_ngram_range=(1, 1), stop_words=stop_w)
+        n = 0
+        # print(x)
+        # end_time = datetime.datetime.now() - start_time
+        # print('time4', end_time)
+        for i, r in x:
+            if i not in stop_w and i not in terms and n <= 7 and not i.isnumeric():
+                obj.keyword_array.append(i)
+                if post:
+                    post.keyword_array.append(i)
+                stop_w.append(i)
+                n += 1
+                # print(i, r)
+        # end_time = datetime.datetime.now() - start_time
+        # print('time5', end_time)
+    except Exception as e:
+        print('get_keywords fail', str(e))
     return obj, post
 
 def get_point_value(post):
@@ -2835,13 +2834,25 @@ def share_with_network(item, post=None, datapacket=None):
         if item.object_type != 'Node' or item.object_type == 'Node' and Node.objects.all().count() > 1:
             # get item.region
             # may need to get INteraction.Region_obj
+            try:
+                if not item.blockchainType == 'NoChain':
+                    print('chain')
+                    chain, obj, receiverChain = find_or_create_chain_from_object(item)
+                    print(chain)
+                    chain.add_item_to_data(item)
+                    print('added1')
+                    chainId = chain.id
+            except Exception as e:
+                print('nochain', str(e))
+                chainId = None
             print('get datatotsharfe')
             if not datapacket:
-                datapacket = get_latest_dataPacket()
-            print('datapacket')
-            print(datapacket)
-            datapacket.add_item_to_data(item)
-            print('shared')
+                datapacket = get_latest_dataPacket(chainId)
+            if datapacket:
+                print('datapacket')
+                print(datapacket)
+                datapacket.add_item_to_data(item)
+                print('shared')
             # if item.object_type != 'Update' and post != False:
             #     try:
             #         if post == None:
@@ -2850,18 +2861,6 @@ def share_with_network(item, post=None, datapacket=None):
             #     except:
             #         post = None
             #     print('done p')
-            try:
-                if not item.blockchainType == 'NoChain':
-                    print('chain')
-                    chain, obj, receiverChain = find_or_create_chain_from_object(item)
-                    print(chain)
-                    chain.add_item_to_data(item)
-                    print('added1')
-                    # if p:
-                    #     chain.add_item_to_data(p)
-                    #     print('added2')
-            except Exception as e:
-                print('nochain', str(e))
 
 def sign_obj(item):
     try:
@@ -3093,22 +3092,27 @@ def sync_model(xModel, jsonContent):
                         fail
                 except Exception as e:
                     user = get_user(public_key=data['publicKey'])
+                    print()
+                    print("data['publicKey']",data['publicKey'])
+                    from accounts.models import UserPubKey
+                    for u in UserPubKey.objects.all():
+                        print('u', u.User_obj.display_name, u.publicKey)
     print('user',user)
     # print()
     # print('data1:', str(get_signing_data(user)))
     # print()
     # print('data2:', str(get_signing_data(data)))
     # print()
-    is_valid = user.verify(str(get_signing_data(data)), data['signature'])
+    is_valid = user.verify(get_signing_data(data), data['signature'])
     print('is_valid', is_valid)
     userTypes = ['User', 'UserPubKey', 'Wallet', 'Transaction', 'UserVote', 'SavePost', 'Follow']
     if is_valid:  
         # print('xModel.object_type',xModel.object_type)
-        if user.username == 'Sozed':
+        if user.username == 'd704bb87a7444b0ab304fd1566ee7aba' or user.display_name == 'Sozed':
             good = True
         elif user.is_superuser:
             # check for a validator from a current superuser
-            good = True
+            # good = True
             pass
         elif xModel.object_type == 'Spren' or xModel.object_type == 'SprenItem':
             # get list of Nodes with ai_capable, xModel.publicKey should match node.User_obj.get_keys()
@@ -3167,7 +3171,7 @@ def sync_model(xModel, jsonContent):
                 try:
                     # print(data[f.name])
                     if f.name in superFields:
-                        if user.username == 'Sozed':
+                        if user.username == 'd704bb87a7444b0ab304fd1566ee7aba':
                             setattr(xModel, f.name, data[f.name])
                         else:
                             # print('sync pass 95684')
@@ -3225,9 +3229,21 @@ def sync_and_share_object(obj, received_json):
     # dataToShare = DataToShare.objects.filter(creator_node_id=get_self_node(IpAddr).id)[0]
     obj, good = sync_model(obj, data)
     if good:
+        try:
+            if not obj.blockchainType == 'NoChain':
+                print('chain')
+                chain, item, receiverChain = find_or_create_chain_from_object(obj)
+                # print(chain)
+                # chain.add_item_to_data(item)
+                # print('added1')
+                chainId = chain.id
+        except Exception as e:
+            print('nochain', str(e))
+            chainId = None
         from blockchain.models import get_operatorData, get_latest_dataPacket
-        dataToShare = get_latest_dataPacket()
-        dataToShare.add_item_to_data(obj)
+        dataToShare = get_latest_dataPacket(chainId)
+        if dataToShare:
+            dataToShare.add_item_to_data(obj)
     return obj, good
 
 def search_and_sync_object(received_json, lock=None):
@@ -3288,7 +3304,7 @@ def find_or_create_chain_from_object(obj):
     receiverChain = None
     if obj.blockchainId:
         return Blockchain.objects.filter(id=obj.blockchainId)[0], obj, None
-    ChainTypes = ['Region', 'Wallet', 'NodeData', 'Validators', 'Users']
+    ChainTypes = ['Region', 'Wallet', 'Nodes', 'Validators', 'Users']
     print('get blockchainType', obj.blockchainType)
     if obj.blockchainType == 'NoChain':
         return blockchain, obj, receiverChain
@@ -3310,11 +3326,11 @@ def find_or_create_chain_from_object(obj):
             except Exception as e:
                 blockchain = Blockchain(genesisId=region.id, genesisType='Region', created=region.DateTime)
                 blockchain.save()
-        elif obj.blockchainType == 'NodeData':
+        elif obj.blockchainType == 'Nodes':
             try:
                 blockchain = Blockchain.objects.filter(genesisId='1')[0]
             except:
-                blockchain = Blockchain(genesisId='1', genesisType='NodeData', created=baseline_time())
+                blockchain = Blockchain(genesisId='1', genesisType='Nodes', created=baseline_time())
         elif obj.blockchainType == 'Validators':
             try:
                 blockchain = Blockchain.objects.filter(genesisId='2')[0]
@@ -3462,7 +3478,7 @@ def get_data_with_relationships(items):
     return data, not_found
 
 def get_app_name(model_name):
-    accounts_models = ['User', 'UserPubKey', 'Verification', 'Wallet', 'Transaction','Notification','Interactions','UserVote','SavePost']
+    accounts_models = ['Sonet', 'User', 'UserPubKey', 'Verification', 'Wallet', 'Transaction','Notification','Interactions','UserVote','SavePost']
     blockchain_models = ['DataPacket','Node','NodeUpdate','Block','Validator','Blockchain']
 
     if model_name in accounts_models:
@@ -3497,16 +3513,26 @@ def get_dynamic_model(model_name, list=False, **kwargs):
             return None
 
 def create_dynamic_model(model_name, **kwargs):
+    # print('create_dynamic_model')
     app_name = get_app_name(model_name)
     from django.apps import apps
     model = apps.get_model(app_name, model_name)
     obj = model(**kwargs)
+    # print(obj.__dict__)
+    if not obj.created:
+        obj.created = now_utc()
+    if not obj.id:
+        obj.id = uuid.uuid4().hex
+    # print(obj.__dict__)
     return obj
 
 def get_or_create_model(model_name, **kwargs):
+    # print('get_or_create_model')
     obj = get_dynamic_model(model_name, **kwargs)
+    # print(obj)
     if not obj:
         obj = create_dynamic_model(model_name, **kwargs)
+        # print(obj)
     return obj
 
 def get_model_and_update(model_name, obj=None, new_model=False, **kwargs):
@@ -3744,18 +3770,18 @@ class Region(models.Model):
     modelVersion = models.CharField(max_length=50, default="v1")
     publicKey = models.CharField(max_length=200, default="")
     signature = models.CharField(max_length=200, default="")
-    DateTime = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    # DateTime = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     ParentRegion_obj = models.ForeignKey('posts.Region', blank=True, null=True, on_delete=models.SET_NULL)
-    nameType = models.CharField(max_length=100, default="") # Continent, Country, Province, State, City, Ward
+    nameType = models.CharField(max_length=100, default="State") # Continent, Country, Province, State, City, Ward
     Name = models.CharField(max_length=100, default="")
     AbbrName = models.CharField(max_length=100, default="", blank=True, null=True)
     # Logo = models.FileField(upload_to='static_cdn/img/provinces/', null=True, blank=True)
-    LogoLink = models.CharField(max_length=100, default="static/img/default_region.jpg", null=True, blank=True)
+    LogoLink = models.CharField(max_length=100, default="/static/img/default_region.jpg", null=True, blank=True)
     # getAiSummary = models.BooleanField(default=False)
-    Wikipedia = models.URLField(null=True, blank=True)
-    modelType = models.CharField(max_length=100, default="", null=True, blank=True) # provState/country/city
+    Wikipedia = models.URLField(default='', null=True, blank=True)
+    modelType = models.CharField(max_length=100, default="provState", null=True, blank=True) # provState/country/city
     timezone = models.CharField(max_length=100, default="US/Eastern", null=True, blank=True)
-    menuItems = models.CharField(max_length=100, default="", null=True, blank=True)
+    menuItems = models.CharField(max_length=100, default="[]", null=True, blank=True)
     is_supported = models.BooleanField(default=False)
 
     def __str__(self):

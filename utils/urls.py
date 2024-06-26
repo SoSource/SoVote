@@ -59,6 +59,8 @@ urlpatterns = [
     #----utils
     path('is_sonet', util_views.is_sonet_view),
     path('get_network_data', util_views.get_network_data_view),
+    path('set_object_data', util_views.set_object_data_view),
+    path('get_object_data', util_views.get_object_data_view),
 
     re_path('mobile_share/(?P<iden>(.*))', util_views.mobile_share_view),
     re_path('share_modal/(?P<iden>(.*))', util_views.share_modal_view),

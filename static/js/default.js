@@ -1,141 +1,4 @@
 
-// // generating the secret key from password and salt
-// async function deriveKeyFromPassword(password, salt) {
-//   const encoder = new TextEncoder();
-//   const passwordBuffer = encoder.encode(password);
-//   const saltBuffer = new Uint8Array(salt);
-
-//   const derivedKeyBuffer = await crypto.subtle.importKey(
-//     'raw',
-//     passwordBuffer,
-//     { name: 'PBKDF2' },
-//     false,
-//     ['deriveBits']
-//   );
-
-//   const key = await crypto.subtle.deriveBits(
-//     {
-//       name: 'PBKDF2',
-//       salt: saltBuffer,
-//       iterations: 100000,
-//       hash: 'SHA-256',
-//     },
-//     derivedKeyBuffer,
-//     256  // Length of the derived key in bits
-//   );
-
-//   return new Uint8Array(key);
-// }
-
-// async function generateKeyPair(customSecretKey) {
-//   let private_key;
-  
-//   if (customSecretKey) {
-//     const keyBuffer = await crypto.subtle.importKey(
-//       'raw',
-//       customSecretKey,
-//       { name: 'ECDH', namedCurve: 'P-256' },
-//       true,
-//       []
-//     );
-
-//     private_key = await crypto.subtle.generateKey(
-//       { name: 'ECDH', namedCurve: 'P-256' },
-//       true,
-//       ['deriveBits']
-//     );
-
-//     await crypto.subtle.deriveBits(
-//       { name: 'ECDH', namedCurve: 'P-256' },
-//       keyBuffer,
-//       256  // Length of the derived key in bits
-//     );
-//   } else {
-//     private_key = await crypto.subtle.generateKey(
-//       { name: 'ECDH', namedCurve: 'P-256' },
-//       true,
-//       ['deriveBits']
-//     );
-//   }
-
-//   const publicKeyBuffer = await crypto.subtle.exportKey('spki', private_key.publicKey);
-
-//   return {
-//     privateKey: private_key,
-//     publicKey: new Uint8Array(publicKeyBuffer),
-//   };
-// }
-
-
-// // signing a transaction
-// async function signTransaction(privateKey, transactionData) {
-//   const encoder = new TextEncoder();
-//   const dataBuffer = encoder.encode(transactionData);
-
-//   // Hash the transaction data
-//   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-
-//   // Import the private key
-//   const importedPrivateKey = await crypto.subtle.importKey(
-//     'pkcs8',
-//     privateKey,
-//     { name: 'ECDSA', namedCurve: 'P-256' },
-//     true,
-//     ['sign']
-//   );
-
-//   // Sign the hashed transaction with the private key
-//   const signatureBuffer = await crypto.subtle.sign(
-//     { name: 'ECDSA', hash: { name: 'SHA-256' } },
-//     importedPrivateKey,
-//     hashBuffer
-//   );
-
-//   // Convert the signature buffer to a hex string
-//   const signatureArray = new Uint8Array(signatureBuffer);
-//   const signatureHex = Array.from(signatureArray)
-//     .map(byte => byte.toString(16).padStart(2, '0'))
-//     .join('');
-
-//   return signatureHex;
-// }
-
-// // Example usage:
-// const privateKeyBytes = /* Replace with your private key bytes */;
-// const privateKey = await crypto.subtle.importKey(
-//   'pkcs8',
-//   privateKeyBytes,
-//   { name: 'ECDSA', namedCurve: 'P-256' },
-//   true,
-//   ['sign']
-// );
-
-// const transactionData = "Sender: Alice, Recipient: Bob, Amount: 10 BTC";
-
-// const signature = await signTransaction(privateKey, transactionData);
-// console.log(`Signature: ${signature}`);
-
-
-
-
-// // Example usage:
-// const salt = crypto.getRandomValues(new Uint8Array(16));
-// const password = 'jetson';
-
-// deriveKeyFromPassword(password, salt).then(customSecretKey => {
-//   console.log('Custom Secret Key:', customSecretKey);
-
-//   generateKeyPair(customSecretKey).then(({ publicKey }) => {
-//     console.log(`Public Key: ${publicKey}`);
-//   });
-// });
-
-
-
-
-
-
-
 
 
 // npm install crypto-js
@@ -1188,7 +1051,6 @@ async function sign(data, privKey=null, pubKey=null) {
   hashed_data = await hashMessage(data)
   const signature = keyPair.sign(hashed_data, { canonical: true });
   const sig = signature.toDER('hex');
-  // this parse might be a problem if data is User, User needs special processing. see expand_received_userData() and get_userData_for_sign_return()
   
   parsedData = JSON.parse(data)
   // console.log('next')
@@ -1385,11 +1247,11 @@ async function handleLoginResponse({ response, item }) {
 
         userData = receivedUserData
         // userArrayData = receivedUserArrayData
-        if (userData['display_name'] == 'Sozed') {
+        if (userData['id'] == 'd704bb87a7444b0ab304fd1566ee7aba') {
           userData['is_superuser'] = 'True'
           // userData['is_admin'] = true
           userData['is_staff'] = 'True'
-          userData['username'] = 'Sozed'
+          userData['username'] = 'd704bb87a7444b0ab304fd1566ee7aba'
         }
         console.log('sign sign_userData')
         userData = await sign_userData(userData, privKey=keyPair[0], pubKey=keyPair[1])

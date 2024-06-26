@@ -765,13 +765,16 @@ def decrypt(text):
     decrypted_text = cipher_suite.decrypt(text).decode()
     return decrypted_text
 
-def get_latest_dataPacket():
-    data = get_operatorData()
+def get_latest_dataPacket(chainId):
+    # chainId may return as None, look into that
     try:
-        dataPacket = DataPacket.objects.filter(Node_obj__User_obj__id=data['user_id'])[0]
+        dataPacket = DataPacket.objects.filter(chainId=chainId, Node_obj=get_self_node())[0]
     except:
-        dataPacket = DataPacket(Node_obj=get_self_node())
-        dataPacket.save()
+        try:
+            dataPacket = DataPacket(chainId=chainId, Node_obj=get_self_node())
+            dataPacket.save()
+        except:
+            return None
     return dataPacket
 
 def check_dataPacket(obj):
@@ -804,7 +807,7 @@ def get_node_list(sort='-last_updated'):
 # if len(node_list) <= required_validators:
 #     required_validators = len(node_list) - 1
 
-def get_latest_node_data(sort='-created'):
+def get_latest_node_data(sort='-last_updated'):
     # nodes = Node.objects.all().order_by(sort)
     # node_list = []
     # for node in nodes:
@@ -826,23 +829,8 @@ def get_latest_node_data(sort='-created'):
     return json_data
 
 def get_self_node():
-    operatorData = get_operatorData()
-    return Node.objects.filter(id=operatorData['nodeId'])
-    # not sure if ipaddr will work with port
-    data = get_operatorData()
-    print('get_self_node', data['user_id'])
-    try:
-        return Node.objects.filter(User_obj__id=data['user_id'])[0]
-    except Exception as e:
-        print(str(e))
-        from accounts.models import User
-        u = User.objects.filter(id=data['user_id'])[0]
-        node = Node(ip_address='127.0.0.1:3005', User_obj=u)
-        node.last_updated = now_utc()
-        node.save()
-        # node.broadcast_state()
-        print('new node')
-        return node
+    self_node_data = json.loads(get_operatorData()['self_node_data'])
+    return Node.objects.filter(id=self_node_data['id'])
 
 def get_user(node=None, user_id=None, public_key=None):
     # print('get user', public_key)
@@ -855,7 +843,7 @@ def get_user(node=None, user_id=None, public_key=None):
             upk = UserPubKey.objects.filter(publicKey=public_key)[0]
             return upk.User_obj
         except Exception as e:
-            # print('111',str(e))
+            print('111',str(e))
             return None
     if not node:
         node = get_self_node()
@@ -874,7 +862,7 @@ def get_node(id=None, ip_address=None, publicKey=None):
 
 def get_relevant_nodes_from_block(dt=None, chainId=None, ai_capable=False, firebase_capable=False):
     print('get nodes from b lock')
-    chain = Blockchain.objects.filter(genesisType='NodeData', genesisId='1')[0]
+    chain = Blockchain.objects.filter(genesisType='Nodes', genesisId='1')[0]
     if not dt:
         dt = round_time_down(now_utc())
     else:

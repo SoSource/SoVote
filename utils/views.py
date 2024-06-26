@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from django.template.defaulttags import register
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 import datetime
 from accounts.models import Notification, Interaction, User
@@ -231,32 +232,72 @@ def is_sonet_view(request):
         x = 'None'
     return JsonResponse({'message' : 'is_sonet', 'sonet' : x})
 
+@csrf_exempt
+def set_object_data_view(request):
+    print('set_obj_data_view')
+    if request.method == 'POST':
+        objData = request.POST.get('objData')
+
+        objData_json = json.loads(objData)
+
+        obj = get_or_create_model(objData_json['object_type'], id=objData_json['id'])
+        # upk.User_obj = user
+        obj, good = sync_and_share_object(obj, objData_json)
+        print('obj-good',good)
+        if good:
+            return JsonResponse({'message' : 'Success', 'obj' : get_user_sending_data(obj)})
+        else:
+            return JsonResponse({'message' : 'A problem occured'})
+    # else:
+    #     regionModel = Region(id=uuid.uuid4().hex, created=now_utc(), func='super', DateTime=now_utc(), nameType='Planet', Name='Earth', modelType='planet', is_supported=True)
+    #     print('regionModel',regionModel)
+    #     return JsonResponse({'message' : 'Success', 'region' : get_signing_data(regionModel)})
+    
+@csrf_exempt
+def get_object_data_view(request):
+    print('get_object_data_view')
+    if request.method == 'POST':
+        obj_type = request.POST.get('obj_type')
+        obj_id = request.POST.get('obj_id')
+        if obj_id == '0':
+            obj_id = uuid.uuid4().hex
+        obj = get_or_create_model(obj_type, id=obj_id)
+        return JsonResponse({'message' : 'Success', 'obj' : get_signing_data(obj)})
+    else:
+        print('else')
+        earthModel = Region(id=uuid.uuid4().hex, created=now_utc(), func='super', DateTime=now_utc(), nameType='Planet', Name='Earth', modelType='planet', is_supported=True)
+        # print('regionModel',regionModel)
+        return JsonResponse({'message' : 'Success', 'obj' : get_signing_data(earthModel)})
+
+
+
 def get_network_data_view(request):
     print('get_supported_chains_view')
-    earthU = Update.objects.filter(pointerType='Region', data__icontains='"is_supported": true', Region_obj__ParentRegion_obj=None)[0]
+    # earthU = Update.objects.filter(pointerType='Region', data__icontains='"is_supported": true', Region_obj__ParentRegion_obj=None)[0]
     # print(earthU)
     # print(earthU.Region_obj)
     # print(earthU.Region_obj.__dict__)
-    regions = {'Earth':{'type':earthU.Region_obj.nameType,'id':earthU.Region_obj.id,'children':[]}}
+    earth = Region.objects.filter(Name='Earth')[0]
+    regions = {'Earth':{'type':earth.nameType,'id':earth.id,'children':[]}}
     def get_children(parent, children_list):
-        children = Update.objects.filter(pointerType='Region', Region_obj__ParentRegion_obj=parent.Region_obj).order_by('Region_obj__Name')
+        children = Region.objects.filter(ParentRegion_obj=parent).order_by('Name')
         # children = Update.objects.filter(pointerType='Region', data__icontains='"is_supported": true', Region_obj__ParentRegion_obj=parent.Region_obj)
         for child in children:
             try:
-                gov = Government.objects.filter(Region_obj=child.Region_obj)[0]
-                govData = {gov.gov_level:{'type':'Government','id':gov.id,'children':[]}}
+                gov = Government.objects.filter(Region_obj=child)[0]
+                govData = {gov.gov_level:{'obj_type':gov.object_type,'type':'Government','id':gov.id,'regionId':gov.Region_obj.id,'children':[]}}
             except:
                 govData = None
-            data = {child.Region_obj.Name:{'type':child.Region_obj.nameType,'id':child.Region_obj.id,'children':[]}}
+            data = {child.Name:{'obj_type':child.object_type,'type':child.nameType,'id':child.id,'children':[]}}
             if govData:
-                data[child.Region_obj.Name]['children'].append(govData)
+                data[child.Name]['children'].append(govData)
             children_list.append(data)
-            new_list = data[child.Region_obj.Name]['children']
+            new_list = data[child.Name]['children']
             xlist = get_children(child, new_list)
-            new_list = data[child.Region_obj.Name]['children'] = xlist
+            new_list = data[child.Name]['children'] = xlist
         return children_list
 
-    xlist = get_children(earthU, regions['Earth']['children'])
+    xlist = get_children(earth, regions['Earth']['children'])
     # print()
     regions['Earth']['children'] = xlist
     # print(regions)
@@ -564,7 +605,7 @@ def add_test_notification_view(request):
     if request.user.is_superuser:
         # print('test notification')
 
-        sozed = User.objects.get(username='Sozed')
+        sozed = User.objects.get(username='d704bb87a7444b0ab304fd1566ee7aba')
         sozed.alert('%s-%s' %(datetime.datetime.now(), 'test notify'), None, 'test body')
 
         # request.user.alert('new test notification', '/', 'test body')

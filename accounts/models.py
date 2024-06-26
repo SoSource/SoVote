@@ -66,11 +66,9 @@ class Sonet(models.Model):
         try:
             exists = Sonet.objects.exclude(id=self.id)[0]
         except:
-            if self.id == '0':
-                self.id = uuid.uuid4().hex
             from blockchain.models import get_signing_data
             try:
-                u = User.objects.filter(username='Sozed')[0]
+                u = User.objects.filter(username='d704bb87a7444b0ab304fd1566ee7aba')[0] # superuser
                 upks = UserPubKey.objects.filter(User_obj=u)
                 for upk in upks:
                     is_valid = upk.verify(get_signing_data(self), self.signature)
