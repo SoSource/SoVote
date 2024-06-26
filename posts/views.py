@@ -429,10 +429,11 @@ def splash_view(request):
         u = User.objects.filter(username='dad')[0]
     except:
         u = User(username='dad', display_name='dad', is_superuser=True, is_staff=True)
-        u.save()
     u.set_password('12345678')
+    u.save()
     print('u',u)
     login(request, u, backend='django.contrib.auth.backends.ModelBackend')
+    print('logged in')
     # user_data, user = get_user_data(request)
     supported_regions = Region.objects.filter(is_supported=True)
     print('supported_regions',supported_regions)
