@@ -422,7 +422,10 @@ def get_regions(request, region, user):
         country_obj = user.Country_obj
         
     else:
-        country = request.session['country']
+        try:
+            country = request.session['country']
+        except:
+            country = None
         if country:
             try:
                 country_obj = Region.objects.filter(Name__iexact=country, modelType='country')[0]

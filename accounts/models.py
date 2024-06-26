@@ -45,7 +45,7 @@ class Sonet(models.Model):
     last_updated = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     title = models.CharField(max_length=200, default="x")
     subtitle = models.CharField(max_length=200, default="", blank=True, null=True)
-    LogoLink = models.CharField(max_length=200, default="/static/img/logo_grey.png")
+    LogoLink = models.CharField(max_length=200, default="/static/img/default_logo.png")
     coin_name = models.CharField(max_length=200, default="token")
     coin_name_plural = models.CharField(max_length=200, default="tokens")
     description = models.CharField(max_length=2000, default="", blank=True, null=True)
