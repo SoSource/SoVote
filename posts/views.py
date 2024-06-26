@@ -427,6 +427,8 @@ def test_view(request):
 def splash_view(request):
     # user_data, user = get_user_data(request)
     supported_regions = Region.objects.filter(is_supported=True)
+    for s in supported_regions:
+        print('supported_regions', s.__dict__)
     style = request.GET.get('style', 'index')
     context = {
         'title': 'Welcome',
