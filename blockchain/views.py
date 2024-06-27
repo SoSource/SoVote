@@ -22,26 +22,29 @@ from django.views.decorators.csrf import csrf_exempt
 @csrf_exempt
 def get_broadcast_list_view(request):
     print('get_broadcast_list_view')
-    obj = 'objx'
-    obj_json = 'jsonx'
     try:
-        if request.method == 'POST':
-            print()
-            # try:
-            obj_json = json.loads(request.POST.get('obj'))
-            obj = get_or_create_model(obj_json['object_type'], obj_json)
-            broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
-            return JsonResponse({'obj' : obj, 'broadcast_list' : broadcast_list, 'validator_list' : validator_list})
-            # except:
-            #     return JsonResponse({'obj' : obj, 'broadcast_list' : [], 'validator_list' : []})
-        else:
-            return JsonResponse({'message' : 'not post'})
-    except Exception as e:
+        obj = 'objx'
+        obj_json = 'jsonx'
         try:
-            x = request.POST.get('obj')
-        except Exception as x:
-            x = str(x)
-        return JsonResponse({'message' : str(e) + obj + '//' + obj_json + '--' + x})
+            if request.method == 'POST':
+                print()
+                # try:
+                obj_json = json.loads(request.POST.get('obj'))
+                obj = get_or_create_model(obj_json['object_type'], obj_json)
+                broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
+                return JsonResponse({'obj' : obj, 'broadcast_list' : broadcast_list, 'validator_list' : validator_list})
+                # except:
+                #     return JsonResponse({'obj' : obj, 'broadcast_list' : [], 'validator_list' : []})
+            else:
+                return JsonResponse({'message' : 'not post'})
+        except Exception as e:
+            try:
+                x = request.POST.get('obj')
+            except Exception as x:
+                x = str(x)
+            return JsonResponse({'message' : str(e) + obj + '//' + obj_json + '--' + x})
+    except Exception as e:
+        return JsonResponse({'message' : str(e)})
 
 
 @csrf_exempt
