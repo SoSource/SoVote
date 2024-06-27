@@ -42,7 +42,7 @@ def get_broadcast_list_view(request):
                 x = request.POST.get('obj')
             except Exception as x:
                 x = str(x)
-            return JsonResponse({'message' : str(e) + obj + '//' + obj_json + '--' + x})
+            return JsonResponse({'message' : str(e) + '__' + str(obj) + '//' + str(obj_json) + '--' + x})
     except Exception as e:
         return JsonResponse({'message' : str(e)})
 
