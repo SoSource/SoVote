@@ -115,44 +115,77 @@ body a:hover{
   scrollbar-width: none;
   /* transform: translate(25%, 0%); */
 }
-.showAllCentered{
-  display: block;
+.modalWidget{
+  display: none;
   position:fixed;
   z-index:10000;
-  top: 0px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
+  /* transform: translateY(-50%); */
   margin-left: auto;
   margin-right: auto;
-  max-height: 100vh;
-  min-width: 300px;
-  max-width: 30%;
+  /* margin-top: auto;
+  margin-bottom: auto; */
+  /* height: 85vh;
+  width: 85vh; */
+  padding: 35px;
+  min-width: 250px;
+  min-height: 350px;
+  max-width: 750px;
+  max-height: 750px;
   background-color: rgba(249, 249, 249,1);
   border: 1px solid #727272;
+  border-radius: 5px;
   /* overflow: scroll; */
-  box-shadow: 0px 0px 5px 0px gray;
+  box-shadow: 0px 0px 10px 2px gray;
 
 }
-.showAllCentered #showAllContent{
+.modalWidget.show{
+  display: block;
+}
+.modalWidgetClose{
+  display: block;
+  position:relative;
+  text-align:right;
+  font-size: larger;
+  top: -15px;
+  left: 10px;
+  cursor: pointer;
+}
+.modalWidget #modalTitle{
   display: block;
   position: relative;
-  overflow: auto;
-  max-height: calc(100vh - 70px);
-  /* scrollbar-width: 10px; */
-  /* border: 1px solid red; */
-
+  font-size: x-large;
+  text-align: center;
+  width: 100%;
+  top: -40px;
+  margin: auto;
 }
-.showAllCentered #showAllClose{
+.modalWidget #modalContent{
+  display: block;
+  position: relative;
+  /* font-size: x-large; */
+  /* border: 1px solid red; */
+  /* margin: 40px; */
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  top: -40px;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+.modalWidget #showAllClose{
   position:relative;
   text-align: right;
   margin: 10px;
   /* border: 1px solid red */
 }
-.showAllCentered #showAllClose:hover{
+.modalWidget #showAllClose:hover{
   text-decoration: underline;
   cursor:pointer;
 }
-.showAllCentered #title{
+.modalWidget #title{
   position:relative;
   display: block;
   height: 30px;
@@ -160,7 +193,7 @@ body a:hover{
   margin: 10px;
   /* border: 1px solid red */
 }
-.showAllCentered ul{
+.modalWidget ul{
   position:relative;
   display: block;
   list-style: none;
@@ -170,19 +203,42 @@ body a:hover{
   /* border: 1px solid green; */
 
 }
-.showAllCentered ul > li{
+.modalWidget ul > li{
   position:relative;
   margin: 6px 0px;
   border-bottom: 1px solid transparent; 
 }
-.showAllCentered ul > li:hover{
-  border-bottom: 1px solid #c4c4c4; 
-  /* text-decoration:underline; */
+.modalWidget ul > li.clickable:hover{
+  /* border-bottom: 1px solid #c4c4c4;  */
+  text-decoration: underline;
+  cursor: pointer;
 }
-.showAllCentered ul > li span{
+.modalWidget ul > li span:not(.material-icons){
   position:relative;
   float: right;
   /* border: 1px solid red; */
+}
+.modalWidget ul > li span.material-icons{
+  position:relative;
+  font-size: 20px;
+  padding-right: 5px;
+  top: 4px;
+}
+#modalForm #field2{
+  position: relative;
+  left: 11px;
+}
+#modalForm input{
+  width: 200px;
+}
+#passwordVisibility {
+  /* border: 1px solid yellow; */
+  position: relative;
+  right: 30px;
+  top: 8px;
+  width: 15px;
+  cursor: pointer;
+  color:gray;
 }
 .indexMobile{
   display: none;
@@ -308,7 +364,10 @@ body a:hover{
     font-weight: lighter;
     font-size: 100%;
   }
-  #navigation .userProfile, .indexMobile .userProfile{
+  #navigation .lds-dual-ring {
+    margin-left: 50px;
+  }
+  #navigation #userProfile, .indexMobile #userProfile{
     position: relative;
     display: block;
     width: 100%;
@@ -320,20 +379,20 @@ body a:hover{
     margin-bottom: 0px;
 
   }
-  #navigation .userProfile li, .indexMobile .userProfile li{
+  #navigation #userProfile li, .indexMobile #userProfile li{
       display: inline-block;
       padding: 0px;
       /* border: 1px solid yellow; */
   }
 
-  #navigation .userPic, .indexMobile .userPic{
+  #navigation #userPic, .indexMobile #userPic{
     position: relative;
     display: inline-block;
     height: 40px;
     /* border: 1px solid red; */
 
   }
-  #navigation .userName, .indexMobile .userName{
+  #navigation #userName, .indexMobile #userName{
     position: relative;
     display: inline-block;
     top: -15px;
@@ -344,14 +403,14 @@ body a:hover{
     /* border: 1px solid red; */
 
   }
-  .feedTop .userName{
+  .feedTop #userName{
     height: 24px;
   }
-  #navigation .userName:hover, #navigation .userPic:hover{
+  #navigation #userName:hover, #navigation #userPic:hover{
     cursor: pointer;
     text-decoration: underline;
   }
-  #navigation .userProfile .settings, .indexMobile .userProfile .settings{
+  #navigation #userProfile .settings, .indexMobile #userProfile .settings{
     position: relative;
     float: right;
     right: 30px;
@@ -913,6 +972,12 @@ body a:hover{
   scrollbar-width: none;
 
 }
+/* .verifyMe {
+  position: relative;
+  display: inline;
+  font-size: 50px;
+  right: 0px;
+} */
 .card .profilePic{
   position: relative;
   display: inline-block;
@@ -1047,6 +1112,22 @@ top:25px;
   margin-top: 25px;
   margin-left:auto;
   margin-right:auto;
+  /* padding: 10px; */
+  border-radius: 7px;
+
+}
+.reactionBar img.miniSprenPic {
+  position:relative;
+  display: block;
+  /* border: 1px solid red; */
+  max-width: 21px;
+  max-height:21px;
+  /* height: 3px; */
+  /* height: 100px; */
+  /* margin: 10px; */
+  margin-top: -3px;
+  margin-left:-3px;
+  margin-right:-3px;
   /* padding: 10px; */
   border-radius: 7px;
 
@@ -1323,11 +1404,11 @@ background-color: #030491;
   padding: 15px;
   width: calc(100% - 30px);
 }
-.hansard{
+.debate{
   /* flex-direction: column */
   min-height: 150px;
 }
-.hansard .profilePic, .committee .profilePic{
+.debate .profilePic, .committee .profilePic{
   position: relative;
   display: block;
   margin: 5px;
@@ -1337,10 +1418,10 @@ background-color: #030491;
   /* width: auto; */
 /* height: auto; */
 }
-.hansard .cardContent{
+.debate .cardContent{
   min-height: 175px;
 }
-.hansard .hansardContent, .committee .committeeContent{
+.debate .debateContent, .committee .committeeContent{
   position: relative;
   display: block;
   width: calc(100% - 15px);
@@ -1363,7 +1444,7 @@ background-color: #030491;
 .postContext span{
   font-size: 80%;
 }
-.hansard .hansardTitle, .committee .committeeTitle{
+.debate .debateTitle, .committee .committeeTitle{
   position: relative;
   display: block;
   /* border: 1px solid red; */
@@ -1371,13 +1452,13 @@ background-color: #030491;
   top: -10px;
   
 }
-.hansard div, .committee div, .bill div, .motion .div, .agendaItem div{
+.debate div, .committee div, .bill div, .motion .div, .agendaItem div{
   position: relative;
   /* display: inline-block; */
   /* border: 1px solid red; */
   /* flex-direction: column */
 }
-.hansard .profileInfo, .committee .profileInfo{
+.debate .profileInfo, .committee .profileInfo{
   position: relative;
   display: inline-block;
   color: #427A26;
@@ -1388,10 +1469,10 @@ background-color: #030491;
   margin: 0px;
   width: 100%;
 }
-.hansard .profileInfo b, .committee .profileInfo b{
+.debate .profileInfo b, .committee .profileInfo b{
   color: #427A26;
 }
-.hansard .hansardInfo, .committee .committeeInfo{
+.debate .debateInfo, .committee .committeeInfo{
   position: relative;
   display: inline-block;
   /* height: 25px; */
@@ -1400,7 +1481,7 @@ background-color: #030491;
   /* border: 1px solid purple; */
   width: 100%;
 }
-.hansard .hansardInfo > ul, .committee .committeeInfo > ul{
+.debate .debateInfo > ul, .committee .committeeInfo > ul{
   position: relative;
   display: inline-block;
   list-style: none;
@@ -1409,14 +1490,14 @@ background-color: #030491;
   padding: 0px;
   margin: 5px 0px;
 }
-.hansard .hansardInfo > ul > li, .committee .committeeInfo > ul > li{
+.debate .debateInfo > ul > li, .committee .committeeInfo > ul > li{
   position: relative;
   display: inline-block;
   /* width: 40%; */
   margin: 3px 10px;
   /* text-decoration: underline; */
 }
-.hansard .watch:hover, .hansard .listen:hover, .committee .watch:hover, .committee .listen:hover{
+.debate .watch:hover, .debate .listen:hover, .committee .watch:hover, .committee .listen:hover{
   cursor: pointer;
   text-decoration: underline;
 }
@@ -1481,17 +1562,17 @@ background-color: #030491;
 
 }
 
-.hansard ParaText, .committee ParaText{
+.debate ParaText, .committee ParaText{
   display: block;
   margin: 10px 0px;
   font-size: 105%;
   /* border: 1px solid purple; */
 
 }
-.agendaItem .readMore:hover, .hansard .readMore:hover, .committee .readMore:hover, .motion .readMore:hover, .spren .readMore:hover{
+.agendaItem .readMore:hover, .debate .readMore:hover, .committee .readMore:hover, .motion .readMore:hover, .spren .readMore:hover{
   text-decoration: underline;
 }
-.hansard .Terms, .committee .Terms{
+.debate .Terms, .committee .Terms{
   position: relative;
   display: block;
   margin-top: 10px;
@@ -1499,14 +1580,14 @@ background-color: #030491;
   /* border: 1px solid red; */
   /* height: 100px; */
 }
-.hansard .Terms > ul, .committee .Terms > ul{
+.debate .Terms > ul, .committee .Terms > ul{
   list-style: none;
   padding: 0px;
   margin: 0px;
   margin-bottom: 10px;
   /* border: 1px solid orange; */
 }
-.hansard .Terms > ul > li, .committee .Terms > ul > li{
+.debate .Terms > ul > li, .committee .Terms > ul > li{
   position: relative;
   display: inline-block;
   margin-right: 8px;
@@ -1515,7 +1596,7 @@ background-color: #030491;
   border: 1px solid #c4c4c4;
   border-radius: 4px;
 }
-.hansard .Terms > ul > li:hover, .committee .committeeTerms > ul > li:hover{
+.debate .Terms > ul > li:hover, .committee .committeeTerms > ul > li:hover{
   /* color: green; */
   cursor: pointer;
   text-decoration: underline;
@@ -1619,17 +1700,18 @@ background-color: #030491;
   cursor: pointer;
 }
 
-.reactionBar ul > li.yea.depress, .reactionBar ul > li.nay.depress, .reactionBar ul > li.follow.depress, .reactionBar ul > li.saveButton.depress, .reactionBar ul > li.share.depress{
+.reactionBar ul > li.reactionbarSpren.depress, .reactionBar ul > li.yea.depress, .reactionBar ul > li.nay.depress, .reactionBar ul > li.follow.depress, .reactionBar ul > li.saveButton.depress, .reactionBar ul > li.share.depress{
     margin-top: 8px;
     height:8px;
   }
-.reactionBar ul > li.yea, .reactionBar ul > li.nay, .reactionBar ul > li.discussionLink, .reactionBar ul > li.saveButton, .reactionBar ul > li.follow, .reactionBar li.share{
+  /* .reactionBar ul > li.reactionbarSpren, .reactionBar ul > li.yea, .reactionBar ul > li.nay, .reactionBar ul > li.discussionLink, .reactionBar ul > li.saveButton, .reactionBar ul > li.follow, .reactionBar li.share{ */
+  .reactionBar ul > li{
   /* margin-top: 8px; */
   /* height:100%; */
   height:16.5px;
   transition: 0.2s;
   /* background-color: transparent; */
-  background: linear-gradient(to top, transparent, #eaeaea);
+  background: linear-gradient(to top, transparent, #eaeaea) !important;
   /* padding-bottom: 17px; */
 }
 .reactionBar ul > li.active{
@@ -1642,26 +1724,23 @@ background-color: #030491;
     color: white;
   }
   
-.reactionBar ul > li.yea.active{
-  /* margin-top: 8px; */
-  /* height:8px; */
+.reactionBar ul > li.reactionbarSpren.active, .reactionBar ul > li.reactionbarSpren:hover{
+  background-color: #00e9ff !important;
+}
+.reactionBar ul > li.yea.active, .reactionBar ul > li.yea:hover{
   background-color: #0b559a !important;
 }
-.reactionBar ul > li.yea.previouslyActive{
-  /* margin-top: 8px;
-  height:8px; */
+/* .reactionBar ul > li.yea.previouslyActive{
   background: linear-gradient(to top, #0b559a, transparent)
-}
-.reactionBar ul > li.nay.active{
+} */
+.reactionBar ul > li.nay.active, .reactionBar ul > li.nay:hover{
   /* margin-top: 8px;
   height:8px; */
   background-color: #ed7600 !important;
 }
-.reactionBar ul > li.nay.previouslyActive{
-  /* margin-top: 8px;
-  height:8px; */
+/* .reactionBar ul > li.nay.previouslyActive{
   background: linear-gradient(to top, #ed7600, transparent)
-}
+} */
 .reactionBar ul .material-icons{
   transition: 0s;
   font-size: 16px;
@@ -1676,37 +1755,36 @@ background-color: #030491;
   height:8px; */
   background-color: #e0e002 !important;
 }
-.reactionBar ul > li.saveButton.active{
+.reactionBar ul > li.saveButton.active, .reactionBar ul > li.saveButton:hover{
   /* margin-top: 8px;
   height:8px; */
   background-color: #e0a102 !important;
 }
-.reactionBar ul > li.share.active{
-  /* margin-top: 8px;
-  height:8px; */
+.reactionBar ul > li.insight.active, .reactionBar ul > li.insight:hover{
+  background-color: #e0e002 !important;
+}
+.reactionBar ul > li.moreVert.active, .reactionBar ul > li.moreVert:hover{
+  background-color: #a5a5a5 !important;
+}
+.reactionBar ul > li.share.active, .reactionBar ul > li.share:hover{
   background-color: #00e9ff !important;
 }
-.reactionBar ul > li.follow.active{
+.reactionBar ul > li.follow.active, .reactionBar ul > li.follow:hover{
   /* margin-top: 8px;
   height:8px; */
   background-color: #0c991a !important;
 }
-.follow.active{
+.follow.active, .follow:hover{
   /* background: linear-gradient(to bottom, transparent, transparent) !important; */
   background-color: #0c991a !important;
 }
 /* .reactionBar ul > li.lastButton{  
   margin: 0px 4px 0px 0px;
 } */
-.reactionBar ul > li.readingButton{
-  /* margin-top: 8px; */
-  /* height:35px; */
+/* .reactionBar ul > li.readingButton{
   transition: 0.2s;
 }
 .reactionBar ul > li.readingButton:hover, .reactionBar ul > li.readingButton a:hover{
-  /* margin-top: 0px; */
-  /* height: 43px; */
-  /* color: white; */
   background: linear-gradient(to top, RGBA(255, 255, 255, 0), #bcbaba);
 }
 .reactionBar ul > li.readingButton.active, .reactionBar ul > li.readingButton a.active{
@@ -1736,7 +1814,7 @@ background-color: #030491;
 }
 div.sharePopUp.show {
   display: block;
-}
+} */
 .copyToClipboard:hover {
   text-decoration: underline;
   cursor: pointer;
@@ -1798,6 +1876,7 @@ div.sharePopUp.show {
   margin-right: auto;
   /* background-color: green; */
   color: black;
+  /* float: left; */
 }
 
 
@@ -1807,7 +1886,7 @@ div.sharePopUp.show {
 
 
 
-#about{
+#splash{
   position: relative;
   display: block;
   margin-left: auto;
@@ -1815,17 +1894,42 @@ div.sharePopUp.show {
   padding: 50px;
   font-size: 110%;
 }
-#about img{
+#splash #splashLogo{
   position:relative;
   display:block;
   margin: auto;
-  max-width: 100px;
-  /* height: auto; */
+  /* max-width: 100px; */
+  max-height: 100px;
   margin-bottom: 50px;
 }
-#about h2{
+
+#splash h1{
+  text-align:center;
+  margin-top: -10px;
+  margin-bottom: 35px;
+}
+#splash h2{
   font-size:130%;
   text-align:center;
+}
+#splash ul#flags, .modalWidget ul#flags{
+  display: flex;
+    justify-content: center;
+  padding-left: 0px;
+}
+#splash #flag, .modalWidget #flag{
+  position:relative;
+  display:inline-block;
+  /* margin: auto;*/
+  padding: 0px 20px 25px 20px; 
+  /* max-width: 100px; */
+  /* height: auto; */
+  /* margin-bottom: 50px; */
+}
+
+#splash #flag a img, .modalWidget #flag img{
+  max-height: 100px;
+  /* max-width: 200px; */
 }
 .values{
   position: relative;
@@ -1967,7 +2071,7 @@ div.sharePopUp.show {
   z-index: 100;
   pointer-events:none;
 }
-.hansard .fadeOut, .committee .fadeOut, .bill .fadeOut, .agendaItem .fadeOut{
+.debate .fadeOut, .committee .fadeOut, .bill .fadeOut, .agendaItem .fadeOut{
   /* couldnt figure out why this is needed  but it is */
   bottom: 68px;
 }
@@ -2021,6 +2125,15 @@ img#hidden{
   bottom: 4px;
   right: 4px;
   height: 15px;
+}
+/* #logutLink span:hover {
+  cursor: pointer;
+  text-decoration: underline;
+} */
+
+#logoutLink a:hover{
+  text-decoration: underline;
+  cursor: pointer;
 }
 /* #bottomNavBar{
     display: none;
