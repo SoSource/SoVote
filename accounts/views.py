@@ -1394,7 +1394,7 @@ def receive_user_login_view(request):
                     try:
                         sonet = get_signing_data(Sonet.objects.all()[0])
                     except:
-                        sonet = None
+                        sonet = get_signing_data(Sonet())
                     return JsonResponse({'message' : 'User Created', 'userData' : get_signing_data(user), 'sonet' : sonet})
                 else:
                     try:
