@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 
+@csrf_exempt
 def get_broadcast_list_view(request):
     print('get_broadcast_list_view')
     if request.method == 'POST':
@@ -61,6 +62,8 @@ def get_node_request_view(request, node_id):
             print('return 2')
             return JsonResponse({'message' : 'Node not found', 'nodeData' : nodeData, 'sonet' : sonet})
 
+
+@csrf_exempt
 def declare_node_state_view(request):
     print('declare_node_state_view')
     if request.method == 'POST':
