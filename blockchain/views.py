@@ -25,7 +25,8 @@ def get_broadcast_list_view(request):
     if request.method == 'POST':
         print()
         try:
-            obj = json.loads(request.POST.get('obj'))
+            obj_json = json.loads(request.POST.get('obj'))
+            obj = get_or_create_model(obj_json['object_type'], obj_json)
             broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
             return JsonResponse({'obj' : obj, 'broadcast_list' : broadcast_list, 'validator_list' : validator_list})
         except:
@@ -76,7 +77,7 @@ def declare_node_state_view(request):
             print('pubkey', publicKey)
             print('sig', signature)
             try:
-                user = User.objects.filter(id=nodeData['User_obj_id'])[0]
+                user = User.objects.filter(id=nodeData['User_obj'])[0]
                 print('user found', user)
                 x = get_signing_data(nodeData)
                 print()
