@@ -863,37 +863,40 @@ def get_node(id=None, ip_address=None, publicKey=None):
 
 def get_relevant_nodes_from_block(dt=None, chainId=None, ai_capable=False, firebase_capable=False):
     print('get nodes from b lock')
-    chain = Blockchain.objects.filter(genesisType='Nodes', genesisId='1')[0]
-    if not dt:
-        dt = round_time_down(now_utc())
-    else:
-        dt = round_time_down(dt)
-    node_block = Block.objects.filter(blockchainId=chain.id, datetime=dt)[0]
-    data = json.loads(node_block.data)
-    if chainId:
-        relevant_nodes = Node.objects.filter(id__in=data[chainId])
-    else:
-        target_nodes = []
-        for chain, nodes in data.items():
-            for i in nodes:
-                target_nodes.append(i)
-        relevant_nodes = Node.objects.filter(id__in=target_nodes)
-    # for i in data:
+    try:
+        chain = Blockchain.objects.filter(genesisType='Nodes', genesisId='1')[0]
+        if not dt:
+            dt = round_time_down(now_utc())
+        else:
+            dt = round_time_down(dt)
+        node_block = Block.objects.filter(blockchainId=chain.id, datetime=dt)[0]
+        data = json.loads(node_block.data)
+        if chainId:
+            relevant_nodes = Node.objects.filter(id__in=data[chainId])
+        else:
+            target_nodes = []
+            for chain, nodes in data.items():
+                for i in nodes:
+                    target_nodes.append(i)
+            relevant_nodes = Node.objects.filter(id__in=target_nodes)
+        # for i in data:
 
-    #     relevant_nodes.append(i['pointerId'])
-    # if ai_capable:
-    #     nodes = Node.objects.filter(ai_capable=True, id__in=target_nodes)
-    # elif firebase_capable:
-    #     nodes = Node.objects.filter(firebase_capable=True, id__in=target_nodes)
-    # else:
-    #     nodes = Node.objects.filter(id__in=target_nodes)
-    # nodes = Node.objects.filter(id__in=target_nodes)
-    # node_list = []
-    # # ensure order is according to block
-    # for i in data:
-    #     for n in nodes:
-    #         if i['pointerId'] == n.id:
-    #             node_list.append(n.id)
+        #     relevant_nodes.append(i['pointerId'])
+        # if ai_capable:
+        #     nodes = Node.objects.filter(ai_capable=True, id__in=target_nodes)
+        # elif firebase_capable:
+        #     nodes = Node.objects.filter(firebase_capable=True, id__in=target_nodes)
+        # else:
+        #     nodes = Node.objects.filter(id__in=target_nodes)
+        # nodes = Node.objects.filter(id__in=target_nodes)
+        # node_list = []
+        # # ensure order is according to block
+        # for i in data:
+        #     for n in nodes:
+        #         if i['pointerId'] == n.id:
+        #             node_list.append(n.id)
+    except:
+        relevant_nodes = []
     return relevant_nodes
 
 def accessed(node=None, response_time=None, update_data=None):

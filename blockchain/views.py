@@ -23,9 +23,12 @@ def get_broadcast_list_view(request):
     print('get_broadcast_list_view')
     if request.method == 'POST':
         print()
-        obj = json.loads(request.POST.get('obj'))
-        broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
-        return JsonResponse({'obj' : obj, 'broadcast_list' : broadcast_list, 'validator_list' : validator_list})
+        try:
+            obj = json.loads(request.POST.get('obj'))
+            broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
+            return JsonResponse({'obj' : obj, 'broadcast_list' : broadcast_list, 'validator_list' : validator_list})
+        except:
+            return JsonResponse({'obj' : obj, 'broadcast_list' : [], 'validator_list' : []})
     else:
         return JsonResponse({'message' : 'not post'})
 

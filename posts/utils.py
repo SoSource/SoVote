@@ -541,7 +541,7 @@ def get_location(request, user):
             print(ip)
             if ip:
                 data = g.city(ip)
-                # print(data)
+                print(data)
                 city_city = data['city']
                 provState_abbrv = data['region']
                 country_name = data['country_name']

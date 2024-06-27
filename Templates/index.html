@@ -38,18 +38,18 @@
     {% if request.user.is_authenticated %}
         <li><a href='/new'>New</a></li>
     {% endif %}
-    <li><a href='/{{ country|lower }}/search'>Search</a></li>
+    <li><a href='/{{ country.Name|lower }}/search'>Search</a></li>
         <!-- <li><a href='/home'>Level: All</a></li> -->
     <!-- </ul> -->
     <br>
     {% if request.user.is_authenticated %}
-        <li style='font-size:130%'><a href='/{{ country|lower }}/home'>Home</a></li>
+        <li style='font-size:130%'><a href='/{{ country.Name|lower }}/home'>Home</a></li>
     <ul class='navSubmenu' id='home'>    
         <li><a href='/following'>Following</a></li>
         <li><a href='/region'>Region</a></li>
     </ul>
     {% else %}
-        <li style='font-size:130%'><a href='/{{ country|lower }}/home'>Home</a></li>
+        <li style='font-size:130%'><a href='/{{ country.Name|lower }}/home'>Home</a></li>
     {% endif %}
         <!-- <br> -->
         <!-- <li style='font-size:130%'><a href='/home'>Home</a></li> -->
@@ -63,15 +63,15 @@
     </ul> -->
     
     <br>
-    <li style='font-size:130%'><a href='/{{ country|lower }}/citizenry'>Citizenry</a></li>
+    <li style='font-size:130%'><a href='/{{ country.Name|lower }}/citizenry'>Citizenry</a></li>
     <ul class='navSubmenu' id='citizenry'>    
-        <li><a href='/{{ country|lower }}/citizen-debates'>Debates</a></li>
-        <li><a href='/{{ country|lower }}/citizen_bills'>Bills</a></li>
-        <li><a href='/{{ country|lower }}/polls'>Polls</a></li>
+        <li><a href='/{{ country.Name|lower }}/citizen-debates'>Debates</a></li>
+        <li><a href='/{{ country.Name|lower }}/citizen_bills'>Bills</a></li>
+        <li><a href='/{{ country.Name|lower }}/polls'>Polls</a></li>
         <!-- <li><a href='/petitions'>Petitions</a></li> -->
     </ul>
     <br>
-    <li style='font-size:130%'><a href='/{{ country|lower }}/legislature'>Legislature</a></li>
+    <li style='font-size:130%'><a href='/{{ country.Name|lower }}/legislature'>Legislature</a></li>
     <ul class='navSubmenu' id='legislature'>    
         <!-- <li><a href='/{{ country.lowerName }}/debates'>Debates</a></li>
         <li><a href='/{{ country.lowerName }}/bills'>Bills</a></li>
@@ -79,7 +79,7 @@
         <li><a href='/{{ country.lowerName }}/officials'>Officials</a></li>
         <li><a href='/{{ country.lowerName }}/elections'>Elections</a></li> -->
         {% for i in country.return_menu_items %}
-        <li><a href='/{{ country|lower }}/{{i|lower}}'>{{ i }}</a></li>
+        <li><a href='/{{ country.Name|lower }}/{{i|lower}}'>{{ i }}</a></li>
         {% endfor %}
     </ul>
 
