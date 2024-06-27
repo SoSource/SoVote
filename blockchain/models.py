@@ -1090,6 +1090,7 @@ skip_fields = [
                'pointerPublicKey','pointerDateTime', 'Update_obj', 
                'coins', 'is_valid', 'slug', 'last_login', 'date_joined',
                'deactivated_time', 'deactivated', 'appToken', 'isVerified',
+               'blockchainId'
                ]
  
 def get_signing_data(obj, extra_data=None):
