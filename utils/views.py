@@ -227,9 +227,9 @@ def view(request):
 def is_sonet_view(request):
     print()
     try:
-        x = get_user_sending_data(Sonet.objects.first())
+        x = get_signing_data(Sonet.objects.first())
     except:
-        x = 'None'
+        x = None
     return JsonResponse({'message' : 'is_sonet', 'sonet' : x})
 
 @csrf_exempt
@@ -245,7 +245,7 @@ def set_object_data_view(request):
         obj, good = sync_and_share_object(obj, objData_json)
         print('obj-good',good)
         if good:
-            return JsonResponse({'message' : 'Success', 'obj' : get_user_sending_data(obj)})
+            return JsonResponse({'message' : 'Success', 'obj' : get_signing_data(obj)})
         else:
             return JsonResponse({'message' : 'A problem occured'})
     # else:
@@ -304,7 +304,11 @@ def get_network_data_view(request):
     # json_data = serializers.serialize('json', [obj])
     # print(json_data)
     # special chains will consist of 'New' 'Transactions' and 'SoMeta'
-    return JsonResponse({'specialChains' : None, 'regionChains' : regions, 'sonet' : get_user_sending_data(Sonet.objects.first())})
+    try:
+        sonet = get_signing_data(Sonet.objects.first())
+    except:
+        sonet = None
+    return JsonResponse({'specialChains' : None, 'regionChains' : regions, 'sonet' : sonet})
     
 def clear_all_app_cache_view(request):
     if request.user.is_superuser:

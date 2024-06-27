@@ -43,11 +43,15 @@ def get_node_request_view(request, node_id):
         return response
     else:
         try:
+            sonet = get_signing_data(Sonet.objects.first())
+        except:
+            sonet = None
+        try:
             node = Node.objects.filter(id=node_id)[0]
             print('return 1')
             nodeData = get_signing_data(node)
             print('return sign data', nodeData)
-            return JsonResponse({'message' : 'Node found', 'nodeData' : nodeData, 'sonet' : get_user_sending_data(Sonet.objects.first())})
+            return JsonResponse({'message' : 'Node found', 'nodeData' : nodeData, 'sonet' : sonet})
         except:
             node_id = node_id
             dt = now_utc()
@@ -55,7 +59,7 @@ def get_node_request_view(request, node_id):
             nodeData = get_signing_data(node)
             print('node set up', node.__dict__)
             print('return 2')
-            return JsonResponse({'message' : 'Node not found', 'nodeData' : nodeData, 'sonet' : get_user_sending_data(Sonet.objects.first())})
+            return JsonResponse({'message' : 'Node not found', 'nodeData' : nodeData, 'sonet' : sonet})
 
 def declare_node_state_view(request):
     print('declare_node_state_view')
