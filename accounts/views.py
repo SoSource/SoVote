@@ -3103,25 +3103,28 @@ def receive_test_data_view(request):
 @csrf_exempt
 def set_sonet_view(request):
     print('set_sonet_view')
-    if request.method == 'POST':
-        try:
-            existing_net = Sonet.objects.all()[0]
-            sonet_exists = True
-        except:
-            sonet_exists = False
-        sonetData = request.POST.get('sonetData')
-        sonetData_json = json.loads(sonetData)
+    try:
+        if request.method == 'POST':
+            try:
+                existing_net = Sonet.objects.all()[0]
+                sonet_exists = True
+            except:
+                sonet_exists = False
+            sonetData = request.POST.get('sonetData')
+            sonetData_json = json.loads(sonetData)
 
-        sonet = get_or_create_model('Sonet', id=sonetData_json['id'])
-        # upk.User_obj = user
-        sonet, good = sync_model(sonet, sonetData_json)
-        print('sonet-good',good)
-        if good:
-            if not sonet_exists:
-                earth = Region(id=uuid.uuid4().hex, created=now_utc(), func='super', DateTime=now_utc(), nameType='Planet', Name='Earth', modelType='planet', is_supported=True)
-                return JsonResponse({'message' : 'Success', 'sonet' : get_signing_data(sonet), 'earth' : get_signing_data(earth)})
+            sonet = get_or_create_model('Sonet', id=sonetData_json['id'])
+            # upk.User_obj = user
+            sonet, good = sync_model(sonet, sonetData_json)
+            print('sonet-good',good)
+            if good:
+                if not sonet_exists:
+                    earth = Region(id=uuid.uuid4().hex, created=now_utc(), func='super', DateTime=now_utc(), nameType='Planet', Name='Earth', modelType='planet', is_supported=True)
+                    return JsonResponse({'message' : 'Success', 'sonet' : get_signing_data(sonet), 'earth' : get_signing_data(earth)})
+                else:
+                    return JsonResponse({'message' : 'Success', 'sonet' : get_signing_data(sonet)})
             else:
-                return JsonResponse({'message' : 'Success', 'sonet' : get_signing_data(sonet)})
-        else:
-            return JsonResponse({'message' : 'A problem occured'})
+                return JsonResponse({'message' : 'A problem occured'})
+    except Exception as e:
+        return JsonResponse({'message' : f'A problem occured, {str(e)}'})
         
