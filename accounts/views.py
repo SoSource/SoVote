@@ -3119,7 +3119,7 @@ def set_sonet_view(request):
             print('sonet-good',good)
             if good:
                 if not sonet_exists:
-                    earth = Region(id=uuid.uuid4().hex, created=now_utc(), func='super', DateTime=now_utc(), nameType='Planet', Name='Earth', modelType='planet', is_supported=True)
+                    earth = Region(id=uuid.uuid4().hex, created=now_utc(), func='super', nameType='Planet', Name='Earth', modelType='planet', is_supported=True)
                     return JsonResponse({'message' : 'Success', 'sonet' : get_signing_data(sonet), 'earth' : get_signing_data(earth)})
                 else:
                     return JsonResponse({'message' : 'Success', 'sonet' : get_signing_data(sonet)})
