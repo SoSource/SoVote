@@ -22,17 +22,24 @@ from django.views.decorators.csrf import csrf_exempt
 @csrf_exempt
 def get_broadcast_list_view(request):
     print('get_broadcast_list_view')
-    if request.method == 'POST':
-        print()
+    try:
+        if request.method == 'POST':
+            print()
+            try:
+                obj_json = json.loads(request.POST.get('obj'))
+                obj = get_or_create_model(obj_json['object_type'], obj_json)
+                broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
+                return JsonResponse({'obj' : obj, 'broadcast_list' : broadcast_list, 'validator_list' : validator_list})
+            except:
+                return JsonResponse({'obj' : obj, 'broadcast_list' : [], 'validator_list' : []})
+        else:
+            return JsonResponse({'message' : 'not post'})
+    except Exception as e:
         try:
-            obj_json = json.loads(request.POST.get('obj'))
-            obj = get_or_create_model(obj_json['object_type'], obj_json)
-            broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
-            return JsonResponse({'obj' : obj, 'broadcast_list' : broadcast_list, 'validator_list' : validator_list})
-        except:
-            return JsonResponse({'obj' : obj, 'broadcast_list' : [], 'validator_list' : []})
-    else:
-        return JsonResponse({'message' : 'not post'})
+            x = request.POST.get('obj')
+        except Exception as x:
+            x = str(x)
+        return JsonResponse({'message' : str(e) + '--' + x})
 
 
 @csrf_exempt
