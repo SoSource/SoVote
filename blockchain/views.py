@@ -66,51 +66,55 @@ def get_node_request_view(request, node_id):
 @csrf_exempt
 def declare_node_state_view(request):
     print('declare_node_state_view')
-    if request.method == 'POST':
-        print()
-        nodeData = json.loads(request.POST.get('nodeData'))
-        publicKey = nodeData['publicKey']
-        signature = nodeData['signature']
-        print()
-        print('pubkey', publicKey)
-        print('sig', signature)
-        try:
-            user = User.objects.filter(id=nodeData['User_obj_id'])[0]
-            print('user found', user)
-            x = get_signing_data(nodeData)
+    try:
+        if request.method == 'POST':
             print()
-            print(x)
+            nodeData = json.loads(request.POST.get('nodeData'))
+            publicKey = nodeData['publicKey']
+            signature = nodeData['signature']
             print()
+            print('pubkey', publicKey)
+            print('sig', signature)
             try:
-                upk = UserPubKey.objects.filter(User_obj=user, publicKey=publicKey)[0]
-                print(upk)
-                # print(signature)
-                # print(x)
-                is_valid = upk.verify(x, signature)
-                # print('is_valid', is_valid)
-                if is_valid:
-                    node_obj = get_or_create_model('Node', id=nodeData['id'])
-                    # upk.User_obj = user
-                    node_obj, good = sync_model(node_obj, nodeData)
-                    print('nodeData-good',good)
-                    # self_broadcast_list, broadcast_list, validator_list = get_broadcast_peers(node_obj)
-                    # downstream_broadcast(broadcast_list, '/blockchain/declare_node_state', nodeData)
-                    if good:
-                        queue = django_rq.get_queue('default')
-                        queue.enqueue(node_obj.broadcast_state, job_timeout=200)
+                user = User.objects.filter(id=nodeData['User_obj_id'])[0]
+                print('user found', user)
+                x = get_signing_data(nodeData)
+                print()
+                print(x)
+                print()
+                try:
+                    upk = UserPubKey.objects.filter(User_obj=user, publicKey=publicKey)[0]
+                    print(upk)
+                    # print(signature)
+                    # print(x)
+                    is_valid = upk.verify(x, signature)
+                    # print('is_valid', is_valid)
+                    if is_valid:
+                        node_obj = get_or_create_model('Node', id=nodeData['id'])
+                        # upk.User_obj = user
+                        node_obj, good = sync_model(node_obj, nodeData)
+                        print('nodeData-good',good)
+                        # self_broadcast_list, broadcast_list, validator_list = get_broadcast_peers(node_obj)
+                        # downstream_broadcast(broadcast_list, '/blockchain/declare_node_state', nodeData)
+                        if good:
+                            queue = django_rq.get_queue('default')
+                            queue.enqueue(node_obj.broadcast_state, job_timeout=200)
 
-                        response = JsonResponse({'message' : 'Sync success', 'nodeData' : x})
-                        return response
+                            response = JsonResponse({'message' : 'Sync success', 'nodeData' : x})
+                            return response
+                        else:
+                            return JsonResponse({'message' : 'Sync failed'})
                     else:
-                        return JsonResponse({'message' : 'Sync failed'})
-                else:
-                    return JsonResponse({'message' : 'Verification failed'})
+                        return JsonResponse({'message' : 'Verification failed'})
+                except Exception as e:
+                    print(str(e))
+                    return JsonResponse({'message' : 'Invalid Password'})
             except Exception as e:
                 print(str(e))
-                return JsonResponse({'message' : 'Invalid Password'})
-        except Exception as e:
-            print(str(e))
-            return JsonResponse({'message' : 'User not found'})
+                return JsonResponse({'message' : 'User not found'})
+    except Exception as e:
+        return JsonResponse({'message' : str(e)})
+
        
 def receive_disavow(request):
     # if enough nodes disavow self_node:
