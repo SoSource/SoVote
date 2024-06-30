@@ -273,10 +273,7 @@ def get_object_data_view(request):
 
 def get_network_data_view(request):
     print('get_supported_chains_view')
-    # earthU = Update.objects.filter(pointerType='Region', data__icontains='"is_supported": true', Region_obj__ParentRegion_obj=None)[0]
-    # print(earthU)
-    # print(earthU.Region_obj)
-    # print(earthU.Region_obj.__dict__)
+    # returns genesisId of supported region chains, genesisId == region.id
     earth = Region.objects.filter(Name='Earth')[0]
     regions = {'Earth':{'type':earth.nameType,'id':earth.id,'children':[]}}
     def get_children(parent, children_list):

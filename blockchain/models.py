@@ -20,6 +20,7 @@ from itertools import chain
 import ast
 from cryptography.fernet import Fernet
 import platform
+from django.forms.models import model_to_dict
 
 
 # hostname = socket.gethostname()    
@@ -37,13 +38,17 @@ striking_days = 30 # too_many_strike count within this number of days before bei
 block_time_delay = 10 # minimum time (mins) before next block on chain
 number_of_scrapers = 2
 
+NodeChain_genesisId = '1'
+ValidatorChain_genesisId = '2'
+UserChain_genesisId = '3' # not used
+
 # for decoding .data(TextField), maybe use json.loads(.data) instead
 # jsonDec = json.decoder.JSONDecoder()
 # myPythonList = jsonDec.decode(myModel.myList)
 
 class DataPacket(models.Model):
     object_type = 'DataPacket'
-    blockchainType = 'NoChain'
+    # blockchainType = 'NoChain'
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     automated = models.BooleanField(default=False)
@@ -395,11 +400,12 @@ class NodeUpdate(models.Model):
     
 class Block(models.Model):
     object_type = 'Block'
-    blockchainType = 'NoChain'
+    blockchainType = models.CharField(max_length=50, default="")
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    automated = models.BooleanField(default=False)
+    # automated = models.BooleanField(default=False)
     blockchainId = models.CharField(max_length=50, default="0")
+    Blockchain_obj = models.ForeignKey('blockchain.Blockchain', blank=True, null=True, on_delete=models.CASCADE)
     publicKey = models.CharField(max_length=200, default="0")
     signature = models.CharField(max_length=200, default="0")
     # branchchainId = models.CharField(max_length=50, default="0")
@@ -410,21 +416,21 @@ class Block(models.Model):
     version = models.IntegerField(default=1) 
     index = models.IntegerField(default=1) 
     # node_length = models.IntegerField(default=1) 
-    datetime = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True) # created time round down to nearest 10 mins
+    datetime = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True) # created time round down to nearest 10 mins, unless NodeChain then round up
     hash = models.CharField(max_length=100, default="0")
     previous_hash = models.CharField(max_length=100, default="0")
     reward = models.CharField(max_length=1000000, default="0")
     data = models.TextField(default='[]', blank=True, null=True)
     number_of_peers = models.IntegerField(default=1) # only used for node chain
     is_valid = models.BooleanField(default=False)
-    script = models.TextField(blank=True, null=True)
+    # script = models.TextField(blank=True, null=True)
 
 
     def __str__(self):
         return 'BLOCK: %s'%(self.id)
     
     def get_previous_block(self):
-        return Block.objects.filter(blockchainId=self.blockchainId, index=self.index-1, is_valid=True).order_by('-index')[0]
+        return Block.objects.filter(Blockchain_obj=self.Blockchain_obj, index=self.index-1, is_valid=True).order_by('-index')[0]
 
     # def get_creator_of_next_block(last_block, target_datetime):
     #     node_list_snapshot = get_closest_snapshot_to_datetime(target_datetime)
@@ -435,6 +441,49 @@ class Block(models.Model):
     #     return node
 
     # def get_next_block_validators(self):
+
+    def get_full_data(self):
+
+        from accounts.models import verify_obj_to_data
+        data = json.loads(self.data)
+        # {'object_type' : post.object_type, 'obj_id' : post.id, 'hash' : sha256_hash}
+        returnData = []
+
+        obj_types = {}
+        for i in data:
+            try:
+                objs[i['object_type']].append(i['obj_id'])
+            except:
+                objs[i['object_type']] = [i['obj_id']]
+        not_found = []
+        for key, idens in obj_types.items:
+            # should also include validators and updates
+            objs = get_dynamic_model(key, list=True, id__in=idens)
+            for obj in objs:
+                is_valid = verify_obj_to_data(obj, obj)
+                if is_valid:
+                    returnData.append(model_to_dict(obj))
+        if self.blockchainType == 'Nodes':
+            # include NodeUpdate data
+            id_list = []
+            for chain, addresslist in self.data.items():
+                for item in addresslist:
+                    if item not in id_list:
+                        id_list.append(item)
+            nodeUpdates = NodeUpdate.objects.filter(pointerId__in=id_list)
+            for obj in nodeUpdates:
+                is_valid = verify_obj_to_data(obj, obj)
+                if is_valid:
+                    returnData.append(model_to_dict(obj))
+        validators = Validator.objects.filter(data__contains=self.id)
+        for obj in validators:
+            is_valid = verify_obj_to_data(obj, obj)
+            if is_valid:
+                returnData.append(model_to_dict(obj))
+
+        return returnData
+
+
 
 
     def is_not_valid(self):
@@ -487,15 +536,17 @@ class Block(models.Model):
 
 class Validator(models.Model):
     object_type = 'Validator'
-    blockchainType = 'NoChain'
+    blockchainType = models.CharField(max_length=50, default="")
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     # automated = models.BooleanField(default=False)
+    blockchainId = models.CharField(max_length=50, default="0")
     publicKey = models.CharField(max_length=200, default="0")
     signature = models.CharField(max_length=200, default="0")
-    pointerId = models.CharField(max_length=50, default="0", db_index=True)
-    pointerType = models.CharField(max_length=50, default="0")
+    # pointerId = models.CharField(max_length=50, default="0", db_index=True)
+    # pointerType = models.CharField(max_length=50, default="0")
     Node_obj = models.ForeignKey('blockchain.Node', blank=True, null=True, on_delete=models.SET_NULL)
+    data = models.TextField(default='[]', blank=True, null=True)
     # creator_node_id = models.CharField(max_length=50, default="0")
     # creator_node_type = 'Node'
     # node = models.ForeignKey('blockchain.Node', blank=True, null=True, on_delete=models.RESTRICT)
@@ -529,6 +580,7 @@ class Blockchain(models.Model):
     data_added_datetime = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True) # when new data was added since last block created
     genesisType = models.CharField(max_length=50, default="0")
     genesisId = models.CharField(max_length=50, default="0", unique=True, db_index=True)
+    # validatesPointerId = models.CharField(max_length=50, default="0", unique=True)
     # publicKey = models.CharField(max_length=200, default="0")
     # signature = models.CharField(max_length=200, default="0")
     # regionId = models.CharField(max_length=50, default="0")
@@ -602,22 +654,23 @@ class Blockchain(models.Model):
 
 
     def create_block(self, previous_hash=None, hash=None, block=None, signature=None):
-        chain_length = Block.objects.filter(Blockchain=self, is_valid=True).count()
+        chain_length = Block.objects.filter(Blockchain_obj=self, is_valid=True).count()
         if block:
             new_block = Block()
             for field in block:
                 setattr(new_block, field, block[field])
         else:
             self_node = get_self_node()
-            new_block = Block(blockchainId=self.id)
-            if self.chainType == 'Nodes':
-                new_block.datetime = round_time_up(datetime.datetime.now()) # node block is one step ahead of other blocks to ensure they are all referring to same node list
+            new_block = Block(blockchainId=self.id, Blockchain_obj=self)
+            if self.genesisType == 'Nodes':
+                new_block.datetime = round_time_up(now_utc()) # node block is one step ahead of other blocks to ensure they are all referring to same node list
             else:
-                new_block.datetime = round_time_down(datetime.datetime.now())
+                new_block.datetime = round_time_down(now_utc())
+            new_block.blockchainType = self.genesisType
             new_block.version = current_version
             new_block.index = chain_length + 1
 
-            new_block.creator_node_id = self_node.id
+            new_block.Node_obj = self_node
             # new_block.node_snapShot = get_latest_snapshot().created
             # new_block.node_length = len(get_node_list())
             new_block.hash = hash
@@ -651,13 +704,14 @@ class Blockchain(models.Model):
             # json_block = json.dumps(dict(print_post_data(post)))
             if post.id not in to_commit_json:
                 import hashlib
+                # might want to use model_to_dict() instead of .__dict__
                 text_bytes = str(post.__dict__).encode('utf-8')
                 sha256_hash = hashlib.sha256(text_bytes).hexdigest()
                 # if post.object_type == ''
                 to_commit_json.append({'object_type' : post.object_type, 'obj_id' : post.id, 'hash' : sha256_hash})
                 self.data = json.dumps(to_commit_json)
                 if not self.data_added_datetime:
-                    self.data_added_datetime = datetime.datetime.now()
+                    self.data_added_datetime = now_utc()
                 self.save()
                 # previous_block = self.get_last_block()
                 # return previous_block.index + 1
@@ -861,7 +915,7 @@ def get_node(id=None, ip_address=None, publicKey=None):
         return Node.objects.filter(User_obj=user)[0]
     # return node
 
-def get_relevant_nodes_from_block(dt=None, chainId=None, ai_capable=False, firebase_capable=False):
+def get_relevant_nodes_from_block(dt=None, genesisId=None, ai_capable=False, firebase_capable=False):
     print('get nodes from b lock')
     try:
         chain = Blockchain.objects.filter(genesisType='Nodes', genesisId='1')[0]
@@ -869,10 +923,10 @@ def get_relevant_nodes_from_block(dt=None, chainId=None, ai_capable=False, fireb
             dt = round_time_down(now_utc())
         else:
             dt = round_time_down(dt)
-        node_block = Block.objects.filter(blockchainId=chain.id, datetime=dt)[0]
+        node_block = Block.objects.filter(Blockchain_obj=chain, datetime=dt)[0]
         data = json.loads(node_block.data)
-        if chainId:
-            relevant_nodes = Node.objects.filter(id__in=data[chainId])
+        if genesisId:
+            relevant_nodes = Node.objects.filter(id__in=data[genesisId])
         else:
             target_nodes = []
             for chain, nodes in data.items():
@@ -1330,7 +1384,7 @@ def find_or_create_chain_from_json(obj):
     except:
         blockchain = Blockchain()
         blockchain.id = obj['blockchainId']
-        blockchain.chainType = obj['blockchainType']
+        blockchain.genesisType = obj['blockchainType']
         blockchain.save()
     return blockchain
 
@@ -1347,7 +1401,7 @@ def date_to_int(date):
 
 def get_most_recent_even_hour(dt=None):
     if not dt:
-        dt = datetime.datetime.now()
+        dt = now_utc()
     dt = dt - datetime.timedelta(minutes=dt.minute, seconds=dt.second, microseconds=dt.microsecond)
     hour = dt.hour
     while hour % 2 != 0:
@@ -1377,22 +1431,22 @@ def get_broadcast_peers(obj):
 
     if obj and obj.object_type == 'Blockchain':
 
-        dt = round_time_down(datetime.datetime.now())
+        dt = round_time_down(now_utc())
         # region_list = [obj.regionId]
-        node_list, dt = get_relevant_nodes_from_block(dt=dt, chaindId=obj.genesisId)
+        node_list, dt = get_relevant_nodes_from_block(dt=dt, genesisId=obj.genesisId)
         date_int = date_to_int(dt)
         previous_block = obj.get_previous_block()
-        starting_position = hash_to_int(previous_block.creator_node_id, len(node_list))
+        starting_position = hash_to_int(previous_block.Node_obj.id, len(node_list))
         
     elif obj and obj.object_type == 'Block':
 
         # region_list = [Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId]
-        node_list = get_relevant_nodes_from_block(dt=obj.datetime, chaindId=Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId)
+        node_list = get_relevant_nodes_from_block(dt=obj.datetime, genesisId=Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId)
         node_list.remove(obj.Node_obj.id)
         date_int = date_to_int(obj.datetime)
         number_of_peers = obj.number_of_peers
         previous_block = obj.get_previous_block()
-        starting_position = hash_to_int(previous_block.creator_node_id, len(node_list))
+        starting_position = hash_to_int(previous_block.Node_obj.id, len(node_list))
         
     elif obj and obj.object_type == 'DataPacket':
         
@@ -1400,19 +1454,19 @@ def get_broadcast_peers(obj):
         # region_list = json.loads(nodeUpdate.supported_regions)
 
         dt = round_time_down(obj.created)
-        node_list = get_relevant_nodes_from_block(dt=dt, chainId=obj.chainId)
+        node_list = get_relevant_nodes_from_block(dt=dt, genesisId=obj.chainId)
         node_list.remove(obj.Node_obj.id)
         date_int = date_to_int(dt)
-        starting_position = hash_to_int(obj.creator_node_id, len(node_list))
+        starting_position = hash_to_int(obj.Node_obj.id, len(node_list))
         
     elif obj and obj.object_type == 'Validator':
         block = Block.objects.filter(id=obj.pointerId)[0]
         # region_list = [Blockchain.objects.filter(id=block.blockchainId)[0].regionId]
         dt = round_time_down(obj.created)
-        node_list = get_relevant_nodes_from_block(dt=dt, chaindId=Blockchain.objects.filter(id=block.blockchainId)[0].genesisId)
+        node_list = get_relevant_nodes_from_block(dt=dt, genesisId=Blockchain.objects.filter(id=block.blockchainId)[0].genesisId)
         # node_list.remove(obj.Node_obj.id)
         date_int = date_to_int(dt)
-        starting_position = hash_to_int(obj.creator_node_id, len(node_list))
+        starting_position = hash_to_int(obj.Node_obj.id, len(node_list))
         
     elif obj and obj.object_type == 'Node':
         # block = Block.objects.filter(id=obj.pointerId)[0]
@@ -1428,7 +1482,7 @@ def get_broadcast_peers(obj):
         node_list = get_relevant_nodes_from_block(dt=dt)
         # node_list.remove(obj.user_id)
         date_int = date_to_int(dt)
-        starting_position = hash_to_int(obj.user_id, len(node_list))
+        starting_position = hash_to_int(obj.id, len(node_list))
         
 
     def get_peer_nodes(broadcaster_id, position, node_list, checked_node_list):
@@ -1903,7 +1957,7 @@ def process_received_data(received_data, block_data=None):
                     text_bytes = str(target_json).encode('utf-8')
                     target_hash = hashlib.sha256(text_bytes).hexdigest()
                     if target_hash == receivedItem['hash']:
-                        sync_model(e, target_json)
+                        obj, good = sync_model(e, target_json)
                         # mismatchedData.append([e, target_json])
             # else:
         eList = [e.id for e in existing]
@@ -1929,72 +1983,72 @@ def process_received_data(received_data, block_data=None):
                 hashMatch = True
             else:
                 hashMatch = False
-        if hashMatch and i['id'] in not_found:
 
-            # this needs work, 'automated' has been elminated
-            try:
-                automated = i['automated']
-            except:
-                automated = False
-            if automated == 'True':
-                if len(scraping_order) > 1:
-                    check_post_validations(i)
-                else:
-                    obj = sync_model(obj, i)
-                    validate_post(obj)
 
-            else:
-                # if i['object_type'] in specialTypes:
-                obj = get_or_create_model(i['object_type'], id=i['id'])
-                # try:
-                #     obj = globals()[i['object_type']].objects.filter(id=i['id'])[0]
-                # except:
-                #     obj = globals()[i['object_type']]()
-                # else:
-                    # obj = globals()[i['object_type']]()
-                if obj.object_type == 'Node':
-                    if obj.deactivated == True and i['deactivated'] == 'False':
-                        is_active = obj.assess_activity()
-                        if is_active:
-                            sync_model(obj, i)
-                        else:
-                            obj = sync_model(obj, i)
-                            obj.deactivated = True
-                            obj.save()
+        userObjects = ['User', 'Node']
+        obj = get_or_create_model(i['object_type'], id=i['id'])
+        if i['object_type'] in userObjects:
+            if obj.object_type == 'Node':
+                if obj.deactivated == True and i['deactivated'] == 'False':
+                    is_active = obj.assess_activity()
+                    if is_active:
+                        obj, good = sync_model(obj, i)
                     else:
-                        sync_model(obj, i)
-                elif obj.object_type == 'User':
-                    # check if username already exists, if so, save first created, delete newer one, may need signature
-                    try:
-                        must_rename = False
-                        u = User.objects.filter(display_name=i['display_name']).exclude(id=i['id'])[0]
-                        if u.created > datetime.datetime.fromisoformat(i['created']):
-                            u.must_rename = True
-                            u.save()
-                        else:
-                            must_rename = True
-                    except:
-                        pass
-                    # if sync_user:
-                    if obj.isVerified == False and i['isVerified'] == 'True' or obj.isVerified == True and i['isVerified'] == 'False':
-                        is_verified = obj.assess_verification()
-                        sync_model(obj, i)
-                        if not is_verified:
-                            obj.isVerified = False
-                            obj.save()
-                    else:
-                        sync_model(obj, i)
-                    if must_rename:
-                        obj.must_rename = True
+                        obj, good = sync_model(obj, i)
+                        obj.deactivated = True
                         obj.save()
                 else:
-                    obj = sync_model(obj, i)
-                    if obj.object_type == 'Keyphrase':
-                        obj.set_trend()
-                    if not block_data:
-                        blockchain, obj, receiverChain = find_or_create_chain_from_object(obj)
-                        blockchain.add_item_to_data(obj)
-                databaseUpdated = True
+                    obj, good = sync_model(obj, i)
+            elif obj.object_type == 'User':
+                # check if username already exists, if so, save first created, delete newer one, may need signature
+                try:
+                    must_rename = False
+                    u = User.objects.filter(display_name=i['display_name']).exclude(id=i['id'])[0]
+                    if u.last_updated > datetime.datetime.fromisoformat(i['last_updated']):
+                        u.must_rename = True
+                        u.save()
+                    else:
+                        must_rename = True
+                except:
+                    pass
+                # if sync_user:
+                if obj.isVerified == False and i['isVerified'] == 'True' or obj.isVerified == True and i['isVerified'] == 'False':
+                    is_verified = obj.assess_verification()
+                    obj, good = sync_model(obj, i)
+                    if not is_verified:
+                        obj.isVerified = False
+                        obj.save()
+                else:
+                    obj, good = sync_model(obj, i)
+                if must_rename:
+                    obj.must_rename = True
+                    obj.save()
+
+        else:
+            obj, good = sync_model(obj, i)
+            if obj.object_type == 'Keyphrase':
+                obj.set_trend()
+            if not block_data:
+                blockchain, obj, receiverChain = find_or_create_chain_from_object(obj)
+                blockchain.add_item_to_data(obj)
+        if good:
+            databaseUpdated = True
+
+        # if hashMatch and i['id'] in not_found:
+
+        #     # this needs work, 'automated' has been elminated
+        #     try:
+        #         automated = i['automated']
+        #     except:
+        #         automated = False
+        #     if automated == 'True':
+        #         if len(scraping_order) > 1:
+        #             check_post_validations(i)
+        #         else:
+        #             obj, good = sync_model(obj, i)
+        #             validate_post(obj)
+
+        #     else:
     return databaseUpdated            
             
 
@@ -2166,9 +2220,9 @@ def check_validation_consensus(block):
     percent = is_valid.count() / total * 100
     # elif self_node.id not in validators and block.created > datetime.datetime.now() - datetime.timedelta(minutes=9) and total < required_validators:
 
-    if total < round(required_validators/10*9) and (block.datetime + datetime.timedelta(minutes=block_time_delay)) < datetime.datetime.now():
+    if total < round(required_validators/10*9) and (block.datetime + datetime.timedelta(minutes=block_time_delay)) < now_utc():
         if self_node.id in validator_list:
-            time_difference = (datetime.datetime.now() - block.datetime) % 10
+            time_difference = (now_utc() - block.datetime) % 10
             # x = time_difference / 10
             # already_received = len(validator_list) + (time_difference - 10) # all but most recent 10
             temp_broadcast_list = []

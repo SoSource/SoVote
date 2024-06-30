@@ -2814,7 +2814,7 @@ def send_for_validation(items, gov, func):
                         #     mb_size += to_megabytes(i)
                         # print('mb_size2', mb_size)
                         json_data = {'type':'for_validation', 'function':func, 'gov_id':gov.id, 'content': data}
-                        downstream_broadcast(broadcast_list, 'receive_posts_for_validating', json_data)
+                        downstream_broadcast(broadcast_list, 'blockchain/receive_posts_for_validating', json_data)
             except Exception as e:
                 print(str(e))
 
@@ -2828,29 +2828,29 @@ def share_all_with_network(items):
 def share_with_network(item, post=None, datapacket=None):
     print('share with network')
     from blockchain.models import get_operatorData, get_latest_dataPacket, Node
-    print(item.object_type)
-    print(Node.objects.all().count())
+    # print(item.object_type)
+    # print(Node.objects.all().count())
     if item.object_type != 'DataPacket': 
         if item.object_type != 'Node' or item.object_type == 'Node' and Node.objects.all().count() > 1:
             # get item.region
             # may need to get INteraction.Region_obj
             try:
                 if not item.blockchainType == 'NoChain':
-                    print('chain')
+                    # print('chain')
                     chain, obj, receiverChain = find_or_create_chain_from_object(item)
-                    print(chain)
+                    # print(chain)
                     chain.add_item_to_data(item)
-                    print('added1')
+                    # print('added1')
                     chainId = chain.id
             except Exception as e:
                 print('nochain', str(e))
                 chainId = None
-            print('get datatotsharfe')
+            # print('get datatotsharfe')
             if not datapacket:
                 datapacket = get_latest_dataPacket(chainId)
             if datapacket:
-                print('datapacket')
-                print(datapacket)
+                # print('datapacket')
+                # print(datapacket)
                 datapacket.add_item_to_data(item)
                 print('shared')
             # if item.object_type != 'Update' and post != False:
@@ -2906,7 +2906,7 @@ def initial_save(item, share=True):
         if not item.blockchainType == 'NoChain':
             # print('chain')
             # print(item.blockchainId)
-            chain, obj, receiverChain = find_or_create_chain_from_object(item)
+            chain, obj, secondChain = find_or_create_chain_from_object(item)
             # print(chain)
             item.blockchainId = chain.id
     except Exception as e:
@@ -2940,7 +2940,7 @@ def initial_save(item, share=True):
     # if share:
     #     share_with_network(item)
     print('done initial save')
-    time.sleep(0.25)
+    # time.sleep(0.25)
     
     
     # no_chains = ['Blockchain', 'Block', 'DataPacket', 'Validator', 'posttotals]
@@ -3072,42 +3072,47 @@ def sync_model(xModel, jsonContent):
         data = jsonContent
     # print(xModel.__dict__)
     # print(data)
-    user = None
-    # if xModel.id == jsonContent['id']:
     try:
-        user = xModel.User_obj
-        if not user:
-            fail
+        if xModel.last_updated > datetime.datetime.fromisoformat(data['last_updated']):
+            return xModel, good
     except:
-        try:
-            user = xModel.Node_obj.User_obj
-            if not user:
-                fail
-        except:
-            try:
-                user = xModel.CreatorNode_obj.User_obj
-                if not user:
-                    fail
-            except:
-                try:
-                    user = get_user(user_id=data['id'])
-                    if not user:
-                        fail
-                except Exception as e:
-                    user = get_user(public_key=data['publicKey'])
-                    print()
-                    print("data['publicKey']",data['publicKey'])
-                    from accounts.models import UserPubKey
-                    for u in UserPubKey.objects.all():
-                        print('u', u.User_obj.display_name, u.publicKey)
-    print('user',user)
+        pass
+    # user = None
+    # # if xModel.id == jsonContent['id']:
+    # try:
+    #     user = xModel.User_obj
+    #     if not user:
+    #         fail
+    # except:
+    #     try:
+    #         user = xModel.Node_obj.User_obj
+    #         if not user:
+    #             fail
+    #     except:
+    #         try:
+    #             user = xModel.CreatorNode_obj.User_obj
+    #             if not user:
+    #                 fail
+    #         except:
+    #             try:
+    #                 user = get_user(user_id=data['id'])
+    #                 if not user:
+    #                     fail
+    #             except Exception as e:
+    #                 user = get_user(public_key=data['publicKey'])
+    #                 print()
+    #                 print("data['publicKey']",data['publicKey'])
+    #                 from accounts.models import UserPubKey
+    #                 for u in UserPubKey.objects.all():
+    #                     print('u', u.User_obj.display_name, u.publicKey)
+    # print('user',user)
     # print()
     # print('data1:', str(get_signing_data(user)))
     # print()
     # print('data2:', str(get_signing_data(data)))
     # print()
-    is_valid = user.verify(get_signing_data(data), data['signature'])
-    print('is_valid', is_valid)
+    # is_valid = user.verify(get_signing_data(data), data['signature'])
+    is_valid = verify_obj_to_data(xModel, data)
     userTypes = ['User', 'UserPubKey', 'Wallet', 'Transaction', 'UserVote', 'SavePost', 'Follow']
     if is_valid:  
         # print('xModel.object_type',xModel.object_type)
@@ -3302,26 +3307,26 @@ def search_and_sync_object(received_json, lock=None):
 
 def find_or_create_chain_from_object(obj):
     print('find_or_create_chain_from_object')
-    from blockchain.models import Blockchain
+    from blockchain.models import Blockchain, NodeChain_genesisId
     blockchain = None
-    receiverChain = None
+    secondChain = None
     if obj.blockchainId:
         return Blockchain.objects.filter(id=obj.blockchainId)[0], obj, None
-    ChainTypes = ['Region', 'Wallet', 'Nodes', 'Validators', 'Users']
+    ChainTypes = ['Region', 'Wallet', 'Nodes', 'SoMeta', 'Users']
     print('get blockchainType', obj.blockchainType)
     if obj.blockchainType == 'NoChain':
-        return blockchain, obj, receiverChain
+        return blockchain, obj, secondChain
     elif obj.blockchainType in ChainTypes:
         # print('yes')
         if obj.blockchainType == obj.object_type:
-            blockchain = Blockchain(genesisId=obj.id, genesisType=obj.object_type)
+            blockchain = Blockchain(genesisId=obj.id, genesisType=obj.object_type, created=obj.DateTime)
             blockchain.save()
         elif obj.blockchainType == 'Region':
             
             try:
                 region = obj.Region_obj
             except:
-                # is Interaction._obj, may not be used
+                # is Interaction._obj, might not be being used
                 from accounts.models import Interaction
                 region = Interaction.objects.filter(User_obj=obj.User_obj, Post_obj__id=obj.pointerId)[0].Region_obj
             try:
@@ -3329,26 +3334,31 @@ def find_or_create_chain_from_object(obj):
             except Exception as e:
                 blockchain = Blockchain(genesisId=region.id, genesisType='Region', created=region.DateTime)
                 blockchain.save()
+                # secondChain = Blockchain(validatesPointerId=blockchain.id, genesisId=region.id, genesisType='Region', created=region.DateTime)
+                # secondChain.save()
         elif obj.blockchainType == 'Nodes':
             try:
-                blockchain = Blockchain.objects.filter(genesisId='1')[0]
+                blockchain = Blockchain.objects.filter(genesisId=NodeChain_genesisId)[0]
             except:
-                blockchain = Blockchain(genesisId='1', genesisType='Nodes', created=baseline_time())
-        elif obj.blockchainType == 'Validators':
-            try:
-                blockchain = Blockchain.objects.filter(genesisId='2')[0]
-            except:
-                blockchain = Blockchain(genesisId='2', genesisType='Validators', created=baseline_time())
-                blockchain.save()
-        elif obj.blockchainType == 'Users':
-            try:
-                blockchain = Blockchain.objects.filter(genesisId='3')[0]
-            except:
-                blockchain = Blockchain(genesisId='3', genesisType='Users', created=baseline_time())
-                blockchain.save()
+                blockchain = Blockchain(genesisId=NodeChain_genesisId, genesisType='Nodes', created=baseline_time())
+        # elif obj.blockchainType == 'Validators':
+        #     try:
+
+
+
+        #         blockchain = Blockchain.objects.filter(genesisId=obj.blockchainId)[0]
+        #     except:
+        #         blockchain = Blockchain(genesisId=ValidatorChain_genesisId, genesisType='Validators', created=baseline_time())
+        #         blockchain.save()
+        # elif obj.blockchainType == 'Users':
+        #     try:
+        #         blockchain = Blockchain.objects.filter(genesisId=UserChain_genesisId)[0]
+        #     except:
+        #         blockchain = Blockchain(genesisId=UserChain_genesisId, genesisType='Users', created=baseline_time())
+        #         blockchain.save()
         elif obj.object_type == 'Transaction': # wallet chain
             blockchain = Blockchain.objects.filter(id=obj.sender_wallet.blockchainId)[0]
-            receiverChain = Blockchain.objects.filter(id=obj.receiver_wallet.blockchainId)[0]
+            secondChain = Blockchain.objects.filter(id=obj.receiver_wallet.blockchainId)[0]
             if not obj.blockchainId:
                 obj.blockchainId = obj.sender_wallet.blockchainId
             if not obj.receiverChainId:
@@ -3361,7 +3371,7 @@ def find_or_create_chain_from_object(obj):
                 blockchain = Blockchain(genesisId=obj.id, genesisType='Wallet', created=obj.created)
                 blockchain.save()
 
-    return blockchain, obj, receiverChain
+    return blockchain, obj, secondChain
 
 # def update_data(object):
     object.data_updated_time = datetime.datetime.now()
@@ -3503,12 +3513,18 @@ def get_dynamic_model(model_name, list=False, **kwargs):
     # print(kwargs)
     if not model:
         return None
-        # raise ValueError(f"Model {model_name} in app {app_name} not found")
     if list:
-        try:
-            return model.objects.filter(**kwargs)
-        except model.DoesNotExist:
-            return None
+        if list == True:
+            try:
+                return model.objects.filter(**kwargs)
+            except model.DoesNotExist:
+                return None
+        else:
+            try:
+                return model.objects.filter(**kwargs)[list[0]:list[1]]
+            except model.DoesNotExist:
+                return None
+            
     else:
         try:
             return model.objects.filter(**kwargs).first()

@@ -7,7 +7,7 @@ from blockchain.models import *
 
 
 class SonetAdmin(admin.ModelAdmin):
-    list_display = ["title"]
+    list_display = ["Title"]
     list_display_links = []
     list_editable = []
     list_filter = []

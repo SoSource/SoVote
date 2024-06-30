@@ -2905,7 +2905,7 @@ def reaction_view(request, iden, item):
                 fail
         except Exception as e:
             # print(str(e))
-            vote = UserVote(User_obj=user, postId=post.id, id=uuid.uuid4().hex, created=now_utc())
+            vote = UserVote(User_obj=user, postId=post.id, pointerId=post.pointerId, id=uuid.uuid4().hex, created=now_utc())
             from blockchain.models import Blockchain
             blockchain = Blockchain.objects.filter(genesisId=post.Region_obj.id)[0]
             vote.blockchainId = blockchain.id
@@ -2970,7 +2970,7 @@ def reaction_view(request, iden, item):
                 fail
         except Exception as e:
             # print(str(e))
-            save = SavePost(User_obj=user, postId=post.id, id=uuid.uuid4().hex, created=now_utc())
+            save = SavePost(User_obj=user, postId=post.id, pointerId=post.pointerId, id=uuid.uuid4().hex, created=now_utc())
             
         return JsonResponse({'message' : 'Please fill, sign and return', 'data' : get_signing_data(save)})
 

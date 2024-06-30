@@ -43,8 +43,8 @@ class Sonet(models.Model):
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    title = models.CharField(max_length=200, default="x")
-    subtitle = models.CharField(max_length=200, default="", blank=True, null=True)
+    Title = models.CharField(max_length=200, default="x")
+    Subtitle = models.CharField(max_length=200, default="", blank=True, null=True)
     LogoLink = models.CharField(max_length=200, default="/static/img/default_logo.png")
     coin_name = models.CharField(max_length=200, default="token")
     coin_name_plural = models.CharField(max_length=200, default="tokens")
@@ -62,7 +62,7 @@ class Sonet(models.Model):
         pass
 
     def save(self):
-        super(Sonet, self).save()
+        # super(Sonet, self).save()
         try:
             exists = Sonet.objects.exclude(id=self.id)[0]
         except:
@@ -372,6 +372,45 @@ def sign(private_key, data):
     # data['signature'] = signature_hex
     return signature_hex
 
+def verify_obj_to_data(obj, data):
+    # verify an object against itself or against proposed updateData
+    from blockchain.models import get_user, get_signing_data
+    user = None
+    if isinstance(dict, data):
+        iden = data['id']
+        pubKey = data['publicKey']
+        sig = data['signature']
+    else:
+        iden = data.id
+        pubKey = data.publicKey
+        sig = data.signature
+    try:
+        user = obj.User_obj
+        if not user:
+            fail
+    except:
+        try:
+            user = obj.Node_obj.User_obj
+            if not user:
+                fail
+        except:
+            try:
+                user = obj.CreatorNode_obj.User_obj
+                if not user:
+                    fail
+            except:
+                try:
+                    user = get_user(user_id=iden)
+                    if not user:
+                        fail
+                except Exception as e:
+                    user = get_user(public_key=pubKey)
+
+    print('user',user)
+    is_valid = user.verify(get_signing_data(data), sig)
+    print('is_valid', is_valid)
+    return is_valid
+
 
 def add_or_verify_pubkey(user, registeredPublicKey, newPublicKey, signature):
     # print('verify registeredpubkey', registeredPublicKey)
@@ -593,7 +632,8 @@ class Notification(BaseAccountModel):
 class UserVote(BaseAccountModel):
     object_type = "UserVote"
     blockchainType = 'Region'
-    postId = models.CharField(max_length=50, default="0") 
+    postId = models.CharField(max_length=50, default="0")
+    pointerId = models.CharField(max_length=50, default="")
     User_obj = models.ForeignKey('accounts.User', blank=True, null=True, on_delete=models.SET_NULL)
     vote = models.CharField(max_length=20, default='none', blank=True, null=True)
 
@@ -629,7 +669,8 @@ class SavePost(models.Model):
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     publicKey = models.CharField(max_length=200, default="0")
     signature = models.CharField(max_length=200, default="0")
-    postId = models.CharField(max_length=50, default="0") 
+    postId = models.CharField(max_length=50, default="0")
+    pointerId = models.CharField(max_length=50, default="")
     User_obj = models.ForeignKey('accounts.User', blank=True, null=True, on_delete=models.SET_NULL)
     saved = models.BooleanField(default=False)
 
