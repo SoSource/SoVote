@@ -4,6 +4,7 @@ from django.db.models import Q
 
 from accounts.models import *
 
+from django.forms.models import model_to_dict
 
 import uuid
 import base64
@@ -3373,12 +3374,10 @@ def find_or_create_chain_from_object(obj):
 
     return blockchain, obj, secondChain
 
-# def update_data(object):
-    object.data_updated_time = datetime.datetime.now()
-    object.save()
 
 def get_data(items):
     print('get data sgtart')
+    from blockchain.models import Validator
     mb_size = 0
     posts_size = 0
         # for i in items_to_get:
@@ -3402,22 +3401,39 @@ def get_data(items):
             iden_list.append(i.id)
     # data = {'objects' : [], 'posts' : [], 'updates' : [], 'references' : []}
     data = []
+    validators = Validator.objects.filter(data__overlap=iden_list).exclude(id__in=iden_list)
+    for obj in validators:
+        is_valid = verify_obj_to_data(obj, obj)
+        if is_valid:
+            data.append(model_to_dict(obj))
+            mb_size += to_megabytes(obj)
     for obj_type, idList in obj_types.items():
         objs = get_dynamic_model(obj_type, list=True, id__in=idList)
-        # globals()[obj_type].objects.filter(id__in=idList)
-        for o in objs:
-            data.append(o.__dict__)
-            mb_size += to_megabytes(o)
-            if o.object_type == 'Post':
-                posts_size += to_megabytes(o)
-        keyphrases = get_dynamic_model('Keyphrase', list=True, pointerId__in=idList)
-        for k in keyphrases:
-            data.append(k.__dict__)
-            mb_size += to_megabytes(k)
-        notifications = get_dynamic_model('Notification', list=True, pointerId__in=idList)
-        for n in notifications:
-            data.append(n.__dict__)
-            mb_size += to_megabytes(n)
+        for obj in objs:
+            is_valid = verify_obj_to_data(obj, obj)
+            if is_valid:
+                data.append(model_to_dict(obj))
+                mb_size += to_megabytes(obj)
+            # if o.object_type == 'Post':
+            #     posts_size += to_megabytes(o)
+    updates = Update.objects.filter(pointerId__in=iden_list).exclude(id__in=iden_list)
+    for obj in updates:
+        is_valid = verify_obj_to_data(obj, obj)
+        if is_valid:
+            data.append(model_to_dict(obj))
+            mb_size += to_megabytes(obj)
+    keyphrases = get_dynamic_model('Keyphrase', list=True, pointerId__in=iden_list)
+    for obj in keyphrases:
+        is_valid = verify_obj_to_data(obj, obj)
+        if is_valid:
+            data.append(model_to_dict(obj))
+            mb_size += to_megabytes(obj)
+    notifications = get_dynamic_model('Notification', list=True, pointerId__in=iden_list)
+    for obj in notifications:
+        is_valid = verify_obj_to_data(obj, obj)
+        if is_valid:
+            data.append(model_to_dict(obj))
+            mb_size += to_megabytes(obj)
     # try:
     #     posts = Post.objects.filter(pointerId__in=iden_list).exclude(id__in=iden_list)
     #     for p in posts:

@@ -1,5 +1,6 @@
 from django.db import models
 from posts.models import Government, Post, now_utc, sign_obj, get_dynamic_model, initial_save, get_data, get_data_with_relationships, search_and_sync_object, get_latest_update, Meeting
+# from accounts.models import sign
 
 import datetime
 from dateutil import tz
@@ -7,7 +8,9 @@ import hashlib
 import base64
 import json
 from uuid import uuid4
+import uuid
 import random
+import math
 import socket
 import requests
 from urllib.parse import urlparse
@@ -85,10 +88,14 @@ class DataPacket(models.Model):
             try:
                 broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(self)
                 # include most recent instance of self_node accessing each other node
-                accessed = NodeUpdate.objects.filter(creator_id=self_node.id, locked_to_chain=False)
+                accessed = NodeUpdate.objects.filter(CreatorNode_obj=self_node)
                 json_data = json.loads(self.data)
+                import hashlib
                 for a in accessed:
-                    json_data.append({a.object_type : a.id})
+                    # might want to use model_to_dict() instead of .__dict__
+                    text_bytes = str(model_to_dict(a)).encode('utf-8')
+                    sha256_hash = hashlib.sha256(text_bytes).hexdigest()
+                    json_data.append({'object_type' : a.object_type, 'obj_id' : a.id, 'hash' : sha256_hash})
                 self.data = json.dump(json_data)
                 self.save()
             except:
@@ -99,13 +106,13 @@ class DataPacket(models.Model):
                 broadcast_peers = broadcast_list[self_node.id]
             except:
                 broadcast_peers = None
-        self.signature = get_user(node=self_node).sign_transaction(base64.b64decode(private_key), str(get_signing_data(self)))
+        self = sign_obj(self)
         self.save()
         if broadcast_peers:
-            data = get_expanded_data(self)     
+            data, not_found = get_data(json.loads(self.data))     
             # successes = 0    
             # tried_nodes = []
-            json_data = {'type' : 'DataPacket', 'self_dict' : self.__dict__, 'broadcast_list' : broadcast_list, 'packet_data' : data}
+            json_data = {'type' : 'DataPacket', 'self_dict' : model_to_dict(self), 'broadcast_list' : broadcast_list, 'packet_data' : data}
             downstream_broadcast(broadcast_list, 'receive_data_packet', json_data, self_dataPacket=True)
             
             
@@ -143,20 +150,17 @@ class Node(models.Model):
     # nodes are saved to blockchain for purpose of a master list, but will fail verification because data can change
     object_type = 'Node'
     blockchainType = 'Nodes'
-    # locked_to_chain = models.BooleanField(default=False)
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    # automated = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    ip_address = models.CharField(max_length=50, default="0")
-    # ip_address = models.CharField(max_length=50, default="0")
-    # last_accessed = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    self_declare_active = models.BooleanField(default=False) 
-    deactivated = models.BooleanField(default=False) # deactivated if too many strikes or not resposnsive
+    ip_address = models.CharField(max_length=50, default="")
+    fcm_capable = models.BooleanField(default=False)
+    ai_capable = models.BooleanField(default=False)
+    self_declare_active = models.BooleanField(default=False)
+    deactivated = models.BooleanField(default=False) # deactivated if too many strikes or not responsive
     deactivated_time = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     supported_chains = models.TextField(default='[]', blank=True, null=True)
     User_obj = models.ForeignKey('accounts.User', blank=True, null=True, on_delete=models.SET_NULL)
-    # user_id = models.CharField(max_length=50, default="0")
     publicKey = models.CharField(max_length=200, default="0")
     signature = models.CharField(max_length=200, default="0")
 
@@ -443,48 +447,30 @@ class Block(models.Model):
     # def get_next_block_validators(self):
 
     def get_full_data(self):
-
         from accounts.models import verify_obj_to_data
         data = json.loads(self.data)
-        # {'object_type' : post.object_type, 'obj_id' : post.id, 'hash' : sha256_hash}
-        returnData = []
-
-        obj_types = {}
-        for i in data:
-            try:
-                objs[i['object_type']].append(i['obj_id'])
-            except:
-                objs[i['object_type']] = [i['obj_id']]
-        not_found = []
-        for key, idens in obj_types.items:
-            # should also include validators and updates
-            objs = get_dynamic_model(key, list=True, id__in=idens)
-            for obj in objs:
-                is_valid = verify_obj_to_data(obj, obj)
-                if is_valid:
-                    returnData.append(model_to_dict(obj))
         if self.blockchainType == 'Nodes':
-            # include NodeUpdate data
+            returnData = []
             id_list = []
             for chain, addresslist in self.data.items():
                 for item in addresslist:
                     if item not in id_list:
                         id_list.append(item)
+            nodes = Node.objects.filter(pointerId__in=id_list)
+            for obj in nodes:
+                is_valid = verify_obj_to_data(obj, obj)
+                if is_valid:
+                    returnData.append(model_to_dict(obj))
             nodeUpdates = NodeUpdate.objects.filter(pointerId__in=id_list)
             for obj in nodeUpdates:
                 is_valid = verify_obj_to_data(obj, obj)
                 if is_valid:
                     returnData.append(model_to_dict(obj))
-        validators = Validator.objects.filter(data__contains=self.id)
-        for obj in validators:
-            is_valid = verify_obj_to_data(obj, obj)
-            if is_valid:
-                returnData.append(model_to_dict(obj))
+
+        else:
+            returnData, not_found = get_data(data) 
 
         return returnData
-
-
-
 
     def is_not_valid(self):
         self_node = get_self_node()
@@ -530,7 +516,7 @@ class Block(models.Model):
         if self.id == '0':
             self = initial_save(self, share=share)
         if self.Node_obj == get_self_node():
-            sign_obj(self)
+            self = sign_obj(self)
         super(Block, self).save()
     
 
@@ -570,21 +556,14 @@ class Validator(models.Model):
 
 class Blockchain(models.Model):
     object_type = 'Blockchain'
-    # blockchainType = 'NoChain'
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    # automated = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     chain_length = models.IntegerField(default=0) 
     data = models.TextField(default='[]', blank=True, null=True)
     data_added_datetime = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True) # when new data was added since last block created
     genesisType = models.CharField(max_length=50, default="0")
     genesisId = models.CharField(max_length=50, default="0", unique=True, db_index=True)
-    # validatesPointerId = models.CharField(max_length=50, default="0", unique=True)
-    # publicKey = models.CharField(max_length=200, default="0")
-    # signature = models.CharField(max_length=200, default="0")
-    # regionId = models.CharField(max_length=50, default="0")
-    # chainType = models.CharField(max_length=50, default="0") # region, nodeupdates, people, wallet
 
     def __str__(self):
         return 'BLOCKCHAIN-type:%s-genesisId:%s'%(self.genesisType, self.genesisId)
@@ -628,23 +607,31 @@ class Blockchain(models.Model):
         #     self.save()
 
         if self.genesisType == 'Nodes':
-            data = []
+            data = {}
+            nodes = Node.objects.filter(self_declare_active=True, deactivated=False)
+            data['All'] = [node.id for node in nodes]
+            nodes = Node.objects.filter(supported_chains__contains='New').filter(self_declare_active=True, deactivated=False)
+            data['New'] = [node.id for node in nodes]
+            nodes = Node.objects.filter(supported_chains__contains='SoMeta').filter(self_declare_active=True, deactivated=False)
+            data['SoMeta'] = [node.id for node in nodes]
+            nodes = Node.objects.filter(supported_chains__contains='Transactions').filter(self_declare_active=True, deactivated=False)
+            data['Transactions'] = [node.id for node in nodes]
             # get all suppoerted regions
             from posts.models import Region
             supported_regions = Region.objects.filter(is_supported=True)
             for region in supported_regions:
-                nodes = Node.objects.filter(supported_chains__icontains=region.id)
-                data.append({'region_id' : region.id, 'nodes' : [node.id for node in nodes]})
+                nodes = Node.objects.filter(supported_chains__icontains=region.id).filter(self_declare_active=True, deactivated=False)
+                data[region.id] = [node.id for node in nodes]
             self.data = json.dumps(data)
             self.save()
             
             
         previous_block = self.get_last_block()
-        previous_hash, expanded_data = get_hash(previous_block)
+        previous_hash = get_hash(previous_block)
 
-        hash, expanded_data = get_hash(self)
+        
 
-        new_block = self.create_block(previous_hash=previous_hash, hash=hash)
+        new_block = self.create_block(previous_hash=previous_hash)
 
 
         # broadcast to all validators
@@ -659,6 +646,7 @@ class Blockchain(models.Model):
             new_block = Block()
             for field in block:
                 setattr(new_block, field, block[field])
+            new_block.reward = calculate_reward(new_block.created)
         else:
             self_node = get_self_node()
             new_block = Block(blockchainId=self.id, Blockchain_obj=self)
@@ -668,15 +656,19 @@ class Blockchain(models.Model):
                 new_block.datetime = round_time_down(now_utc())
             new_block.blockchainType = self.genesisType
             new_block.version = current_version
+            new_block.id = uuid.uuid4().hex
+            new_block.created = now_utc()
             new_block.index = chain_length + 1
 
             new_block.Node_obj = self_node
             # new_block.node_snapShot = get_latest_snapshot().created
             # new_block.node_length = len(get_node_list())
-            new_block.hash = hash
+            new_block.reward = calculate_reward(new_block.created)
             new_block.previous_hash = previous_hash
             new_block.data = self.data
             new_block.number_of_peers = number_of_peers
+            # new_block.save()
+            new_block.hash = get_hash(new_block)
             new_block.save()
             # new_block.signature = get_user(node=self_node).sign_transaction(base64.b64decode(private_key), get_validation_data(new_block))
         new_block.is_valid = False
@@ -746,19 +738,11 @@ def broadcast_block(block, lst=None, validations=None):
     #     validator_list.append(v.__dict__)
 
     # json_data = json.loads(block.data)
-    block_data = get_expanded_data(block)
-    json_data = {'type' : 'Blocks', 'broadcast_list': broadcast_list, 'blockchainId' : block.blockchainId, 'block_list' : [{'block_dict' : block.__dict__, 'block_data' : block_data, 'validations' : validations,}], 'end_of_chain' : True}
-    downstream_broadcast(lst, 'receive_blocks', json_data)
+    # block_data, not_found = get_data(json.loads(block.data))
+    block_content = block.get_full_data()
+    json_data = {'type' : 'Blocks', 'broadcast_list': broadcast_list, 'blockchainId' : block.blockchainId, 'block_list' : [{'block_dict' : model_to_dict(block), 'block_data' : block_content, 'validations' : validations,}], 'end_of_chain' : True}
+    downstream_broadcast(lst, 'blockchain/receive_blocks', json_data)
 
-# def get_operatorData():
-#     with open("soNodeOperatorData.json", 'r') as file:
-#         data = json.load(file)
-#     return data
-
-# def write_operatorData(data):
-#     with open("operatorData.json", 'w') as file:
-#         json.dump(data, file, indent=4)
-    
 def get_operatorData():
     # print('get_operatorData')
     try:
@@ -791,7 +775,6 @@ def write_operatorData(data):
     encrypted_data = encrypt(data_string)
     with open("soNodeOperatorData.json", 'wb') as file:
         file.write(encrypted_data)
-
 
 def load_key():
     print('load_key')
@@ -850,18 +833,6 @@ def get_node_list(sort='-last_updated'):
         node_list.append(node)
     return nodes
  
-# def get_expanded_node_list(sort='-created'):
-    # from posts.models import dict_with_relationships
-    # nodes = Node.objects.all().order_by(sort)
-    # node_list = []
-    # for node in nodes:
-    #     node_list.append(dict_with_relationships(node))
-    # return nodes
-
-# node_list = get_node_list()
-# if len(node_list) <= required_validators:
-#     required_validators = len(node_list) - 1
-
 def get_latest_node_data(sort='-last_updated'):
     # nodes = Node.objects.all().order_by(sort)
     # node_list = []
@@ -904,7 +875,6 @@ def get_user(node=None, user_id=None, public_key=None):
         node = get_self_node()
     return User.objects.filter(id=node.user_id)[0]
 
-
 def get_node(id=None, ip_address=None, publicKey=None):
     if id:
         return Node.objects.filter(id=id)[0]
@@ -925,14 +895,12 @@ def get_relevant_nodes_from_block(dt=None, genesisId=None, ai_capable=False, fir
             dt = round_time_down(dt)
         node_block = Block.objects.filter(Blockchain_obj=chain, datetime=dt)[0]
         data = json.loads(node_block.data)
+
         if genesisId:
             relevant_nodes = Node.objects.filter(id__in=data[genesisId])
         else:
-            target_nodes = []
-            for chain, nodes in data.items():
-                for i in nodes:
-                    target_nodes.append(i)
-            relevant_nodes = Node.objects.filter(id__in=target_nodes)
+            # may also be 'SoMeta' or 'Transactions', possibly others
+            relevant_nodes = Node.objects.filter(id__in=data['All'])
         # for i in data:
 
         #     relevant_nodes.append(i['pointerId'])
@@ -1130,12 +1098,24 @@ def get_starting_position(object, node_id_list): # not used
     return position, date
 
 def get_hash(obj):
-    json_data = get_expanded_data(obj)
-    return hashlib.sha256()(str(json_data).encode()).hexdigest(), json_data
+    # json_data = get_expanded_data(obj)
+    data = model_to_dict(obj)
+    del data['hash']
+    del data['is_valid']
+    del data['signature']
+    del data['publicKey']
+    return hashlib.sha256()(str(data).encode()).hexdigest()
 
-def calculate_reward():
-    block_count = Block.objects.all().count()
-    reward = 1 - (block_count/100)
+def calculate_reward(dt):
+    # 1 full coin divided in half every 3 years since first block created
+    if not dt:
+        dt = now_utc()
+    first_block = Block.objects.all().order_by['created'][0]
+    years_since = (dt - first_block.created).years
+    num = math.floor(years_since / 3)
+    reward = 1
+    for i in range(num):
+        reward / 2
     return reward
 
 skip_fields = [
@@ -1144,7 +1124,7 @@ skip_fields = [
                'password', 'rank', 'randomizer', 'keyword_array', 'total_votes', 
                'total_yeas', 'total_nays', 'total_voter_votes', 'total_voter_yeas', 
                'total_voter_nays', 'total_comments','total_saves','total_shares',
-               'pointerPublicKey','pointerDateTime', 'Update_obj', 
+               'pointerPublicKey','pointerDateTime', 'Update_obj', 'hash',
                'coins', 'is_valid', 'slug', 'last_login', 'date_joined',
                'deactivated_time', 'deactivated', 'appToken', 'isVerified',
                'blockchainId'
@@ -1264,6 +1244,7 @@ def get_full_data(obj):
     # print(json.dumps(data, separators=(',', ':')))
     return json.dumps(data, separators=(',', ':'))
 
+# dont use, use get_data()
 def get_expanded_data(obj, get_relationships=False):
     # json_data = {'reward' : calculate_reward()}
     json_data = {}
@@ -1972,6 +1953,11 @@ def process_received_data(received_data, block_data=None):
     # some funcs like get_user_region may return objects such as 'Region' that may be created on other nodes at the same time
     # get_user_region may be run by anyone
 
+    # each model obj should have a validator created by the appropriate node, if not validated properly dont save
+    # validators do not have a validator, neither do Users, Nodes, NodeUpdate, Blockchain, UserVote, UserPubKey, SavePost, sonet
+    # perhaps adjust so that Node creates a validator for User, nodeUpdate, UserVOte, Userpubkey, SavePost, Sonet when sending dataPacket
+    # nodes and block validators are broadcast instantly, not with dataPacket
+
     scraping_order = get_scraping_order()
     for i in received_data:
         hashMatch = True
@@ -2126,10 +2112,11 @@ def process_received_blocks(received_json):
             elif blockchain.chain_length > int(new_block['index']):
                 json_data = {'type' : 'Block', 'broadcast_list': [], 'blockchainId' : blockchain.id, 'block_list' : []}
                 for return_block in Block.objects.filter(blockchainId=blockchain.id, index_gt=int(new_block['index'])):
-                    validations = Validator.objects.filter(pointerId=return_block.id)
-                    validator_list = [v.__dict__ for v in validations]
-                    json_data['block_list'].append({'block_dict' : return_block.__dict__, 'block_data' : get_expanded_data(return_block), 'validations' : validator_list})
-                success, response = connect_to_node(get_node(id=received_json['sender']['id']), 'receive_blocks', json_data)
+                    validations = Validator.objects.filter(data__contains=return_block.id)
+                    validator_list = [model_to_dict(v) for v in validations]
+                    data, not_found = get_data(json.loads(return_block.data))
+                    json_data['block_list'].append({'block_dict' : model_to_dict(return_block), 'block_data' : data, 'validations' : validator_list})
+                success, response = connect_to_node(get_node(id=received_json['sender']['id']), 'blockchain/receive_blocks', json_data)
                 break
                 # resolve_block_differences(created_block, competing_blocks)
             
@@ -2302,7 +2289,7 @@ def validate_block(block, broadcast_list=None):
     # if not signature_verified:
     #     return False, None, False
     # else:
-    hash, expanded_data = get_hash(block)
+    hash = get_hash(block)
     target_hash = block.hash
     try:
         validator = Validator.objects.filter(pointerId=block.id, creator_node_id=self_node.id)[0]
@@ -2363,12 +2350,12 @@ def node_ai_capable():
 def downstream_broadcast(broadcast_list, target, json_data, self_dataPacket=False):
     print('downstream broadcast')
     successes = 0
-    def func(peer_ids):
+    def func(peer_ips):
         successes = 0
-        peer_nodes = Node.objects.filter(id__in=peer_ids)
+        peer_nodes = Node.objects.filter(ip_address__in=peer_ips)
         for node in peer_nodes:
             # node = get_node(id=peer_id)
-            if node.deactivated:
+            if node.deactivated or node.self_declare_active == False:
                 try:
                     func(broadcast_list[node.id])
                 except Exception as e:
@@ -2392,6 +2379,7 @@ def downstream_broadcast(broadcast_list, target, json_data, self_dataPacket=Fals
         print(str(e))
     if successes >= number_of_peers and self_dataPacket:
         try:
+            # adjust to define WHICH dataPacket, they are devided by chain
             dataPacket = DataPacket.objects.filter(creator_node_id=get_self_node().id).exclude(data=[])[0]
             dataPacket.data = '[]'
             dataPacket.save()

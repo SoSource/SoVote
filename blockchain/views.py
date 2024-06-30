@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from .models import Blockchain, Block, Node
-from accounts.models import Sonet, User, UserPubKey
+from accounts.models import Sonet, User, UserPubKey, verify_obj_to_data
 from posts.models import sync_and_share_object, sync_model, get_or_create_model, get_dynamic_model, search_and_sync_object, get_data_with_relationships, find_or_create_chain_from_object, now_utc
 from blockchain.models import get_signing_data, round_time_down, downstream_broadcast, get_broadcast_peers, process_received_data, NodeChain_genesisId, ValidatorChain_genesisId, number_of_peers, required_validators, Validator, get_node, get_expanded_data, accessed, get_operatorData
 from posts.utils import get_user_sending_data
@@ -53,13 +53,18 @@ def get_current_node_list_view(request):
         dt = round_time_down(now_utc())
         node_block = Block.objects.filter(blockchainId=chain.id, datetime=dt)[0]
 
-        
+        node_data = json.loads(node_block.data)
         data = {}
-        for chain, nodes in node_block.data.items():
+        for chain, nodes in node_data['specialChains'].items():
             target_nodes = []
             for i in nodes:
                 target_nodes.append(i)
-            data[chain] = list(Node.objects.filter(id__in=target_nodes).values_list('ip_address', flat=True))
+            data[chain] = list(Node.objects.filter(id__in=target_nodes, self_declare_active=True).exclude(deactivated=True).exclude(ip_address='').values_list('ip_address', flat=True))
+        for chain, nodes in node_data['regionChains'].items():
+            target_nodes = []
+            for i in nodes:
+                target_nodes.append(i)
+            data[chain] = list(Node.objects.filter(id__in=target_nodes, self_declare_active=True).exclude(deactivated=True).exclude(ip_address='').values_list('ip_address', flat=True))
         return JsonResponse({'message' : 'Success', 'data' : json.dumps(data)})
     except Exception as e:
         return JsonResponse({'message' : 'Fail', 'error' : str(e)})
@@ -171,11 +176,16 @@ def check_if_exists_view(request):
         else:
             return JsonResponse({'message' : 'Not Found'})
 
+def broadcast_dataPackets_view(request):
+    # happens when self_node declares self inactive
+    pass
+
 @csrf_exempt
 def receive_data_view(request):
     try:
         # different types of data should be processed differently
-        # ex block should check validation consensus when received
+        # ex block should check validation consensus when received, note process_received_block()
+        # check sender of content, do not accept if node.disavowed
         if request.method == 'POST':
             data = request.POST.get('data')
             # items = request.POST.get('items')
@@ -243,7 +253,7 @@ def request_data_view(request):
                 else:
                     models = get_dynamic_model(obj_type, list=True, id__in=items)
                 if models:
-                    data_to_send = [model_to_dict(obj) for obj in models]
+                    data_to_send = [model_to_dict(obj) for obj in models if verify_obj_to_data(obj, obj)]
                     return JsonResponse({'message' : 'Found', 'data' : str(data_to_send), 'index' : index})
                 else:
                     return JsonResponse({'message' : 'Not Found'})
@@ -256,6 +266,7 @@ def receive_posts_for_validating_view(request):
     # if not received, do nothing
     # if second copy is already received compare data, if match, create validator
     # broadcast validator and first created items, delete copy items
+    # take special note of receiving keyphrase or notification
     pass
 
 

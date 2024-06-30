@@ -6,7 +6,7 @@ from django.db.models import Q, Value, F, Avg
 
 # from django.contrib.postgres.fields import ArrayField
 from posts.models import initial_save, superDelete, now_utc, sign_obj, share_with_network, find_or_create_chain_from_object, create_dynamic_model, get_point_value, set_keywords, Post, Archive
-from blockchain.models import check_dataPacket
+from blockchain.models import check_dataPacket, get_operatorData, get_signing_data
 import re
 import time
 import datetime
@@ -360,6 +360,34 @@ def generate_keyPair(password):
     print('result', keys)
     return keys
 
+# def sign(obj, privKey=None, pubKey=None):
+#     print('signing...')
+#     if not privKey or not pubKey:
+#         operatorData = get_operatorData()
+#     if not pubKey:
+#         pubKey = operatorData['pubKey']
+#     if not privKey:
+#         privKey = operatorData['privKey']
+#     # try:
+#     #     del data['publicKey']
+#     #     del data['signature']
+#     # except:
+#     #     pass
+#     # print('data1',data)
+#     # data = json.dumps(data, separators=(',', ':'))
+#     data = get_signing_data(self)
+    
+#     private_key_bytes = bytes.fromhex(privKey)
+#     # print('private_key_bytes1',private_key_bytes)
+#     private_key = ec.derive_private_key(int.from_bytes(private_key_bytes, byteorder='big'), ec.SECP256K1())
+#     signature = private_key.sign(str(data).encode('utf-8'), ec.ECDSA(hashes.SHA256()))
+#     signature_hex = signature.hex()
+#     print('sig',signature_hex)
+#     data = json.loads(data)
+#     data['publicKey'] = pubKey
+#     data['signature'] = signature_hex
+#     # print('signed data', data)
+#     return data
 
 def sign(private_key, data):
     private_key_bytes = bytes.fromhex(private_key)
@@ -410,7 +438,6 @@ def verify_obj_to_data(obj, data):
     is_valid = user.verify(get_signing_data(data), sig)
     print('is_valid', is_valid)
     return is_valid
-
 
 def add_or_verify_pubkey(user, registeredPublicKey, newPublicKey, signature):
     # print('verify registeredpubkey', registeredPublicKey)
