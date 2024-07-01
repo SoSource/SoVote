@@ -72,30 +72,33 @@ def get_current_node_list_view(request):
 @csrf_exempt
 def get_node_request_view(request, node_id):
     print('get_node')
-    if node_id == 'self':
-        operatorData = get_operatorData()
-        node_obj = get_or_create_model('Node', id=operatorData['nodeId'])
-        response = JsonResponse({'nodeData' : get_signing_data(node_obj)})
-        return response
-    else:
-        try:
-            sonet = get_signing_data(Sonet.objects.first())
-        except:
-            sonet = None
-        try:
-            node = Node.objects.filter(id=node_id)[0]
-            print('return 1')
-            nodeData = get_signing_data(node)
-            print('return sign data', nodeData)
-            return JsonResponse({'message' : 'Node found', 'nodeData' : nodeData, 'sonet' : sonet})
-        except:
-            node_id = node_id
-            dt = now_utc()
-            node = Node(id=node_id, created=dt)
-            nodeData = get_signing_data(node)
-            print('node set up', node.__dict__)
-            print('return 2')
-            return JsonResponse({'message' : 'Node not found', 'nodeData' : nodeData, 'sonet' : sonet})
+    try:
+        if node_id == 'self':
+            operatorData = get_operatorData()
+            node_obj = get_or_create_model('Node', id=operatorData['nodeId'])
+            response = JsonResponse({'nodeData' : get_signing_data(node_obj)})
+            return response
+        else:
+            try:
+                sonet = get_signing_data(Sonet.objects.first())
+            except:
+                sonet = None
+            try:
+                node = Node.objects.filter(id=node_id)[0]
+                print('return 1')
+                nodeData = get_signing_data(node)
+                print('return sign data', nodeData)
+                return JsonResponse({'message' : 'Node found', 'nodeData' : nodeData, 'sonet' : sonet})
+            except:
+                node_id = node_id
+                dt = now_utc()
+                node = Node(id=node_id, created=dt)
+                nodeData = get_signing_data(node)
+                print('node set up', node.__dict__)
+                print('return 2')
+                return JsonResponse({'message' : 'Node not found', 'nodeData' : nodeData, 'sonet' : sonet})
+    except Exception as e:
+        return JsonResponse({'message' : 'Fail', 'error' : str(e)})
 
 @csrf_exempt
 def declare_node_state_view(request):
