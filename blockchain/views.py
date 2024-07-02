@@ -59,12 +59,12 @@ def get_current_node_list_view(request):
             target_nodes = []
             for i in nodes:
                 target_nodes.append(i)
-            data[chain] = list(Node.objects.filter(id__in=target_nodes, declare_self_active=True).exclude(deactivated=True).exclude(ip_address='').values_list('ip_address', flat=True))
+            data[chain] = list(Node.objects.filter(id__in=target_nodes, self_declare_active=True).exclude(deactivated=True).exclude(ip_address='').values_list('ip_address', flat=True))
         for chain, nodes in node_data['regionChains'].items():
             target_nodes = []
             for i in nodes:
                 target_nodes.append(i)
-            data[chain] = list(Node.objects.filter(id__in=target_nodes, declare_self_active=True).exclude(deactivated=True).exclude(ip_address='').values_list('ip_address', flat=True))
+            data[chain] = list(Node.objects.filter(id__in=target_nodes, self_declare_active=True).exclude(deactivated=True).exclude(ip_address='').values_list('ip_address', flat=True))
         return JsonResponse({'message' : 'Success', 'data' : json.dumps(data)})
     except Exception as e:
         return JsonResponse({'message' : 'Fail', 'error' : str(e)})
