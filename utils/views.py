@@ -271,42 +271,6 @@ def get_object_data_view(request):
 
 
 
-def get_network_data_view(request):
-    print('get_supported_chains_view')
-    # returns genesisId of supported region chains, genesisId == region.id
-    earth = Region.objects.filter(Name='Earth')[0]
-    regions = {'Earth':{'type':earth.nameType,'id':earth.id,'children':[]}}
-    def get_children(parent, children_list):
-        children = Region.objects.filter(ParentRegion_obj=parent).order_by('Name')
-        # children = Update.objects.filter(pointerType='Region', data__icontains='"is_supported": true', Region_obj__ParentRegion_obj=parent.Region_obj)
-        for child in children:
-            try:
-                gov = Government.objects.filter(Region_obj=child)[0]
-                govData = {gov.gov_level:{'obj_type':gov.object_type,'type':'Government','id':gov.id,'regionId':gov.Region_obj.id,'children':[]}}
-            except:
-                govData = None
-            data = {child.Name:{'obj_type':child.object_type,'type':child.nameType,'id':child.id,'children':[]}}
-            if govData:
-                data[child.Name]['children'].append(govData)
-            children_list.append(data)
-            new_list = data[child.Name]['children']
-            xlist = get_children(child, new_list)
-            new_list = data[child.Name]['children'] = xlist
-        return children_list
-
-    xlist = get_children(earth, regions['Earth']['children'])
-    # print()
-    regions['Earth']['children'] = xlist
-    # print(regions)
-    # json_data = serializers.serialize('json', [obj])
-    # print(json_data)
-    # special chains will consist of 'New' 'Transactions' and 'SoMeta'
-    try:
-        sonet = get_signing_data(Sonet.objects.first())
-    except:
-        sonet = None
-    return JsonResponse({'specialChains' : None, 'regionChains' : regions, 'sonet' : sonet})
-    
 def clear_all_app_cache_view(request):
     if request.user.is_superuser:
         print('run notify')

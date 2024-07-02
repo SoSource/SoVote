@@ -3072,8 +3072,8 @@ def sync_model(xModel, jsonContent):
         data = json.loads(jsonContent)
     except:
         data = jsonContent
-    # print(xModel.__dict__)
-    # print(data)
+    print(xModel.__dict__)
+    print(data)
     try:
         if xModel.last_updated > datetime.datetime.fromisoformat(data['last_updated']):
             return xModel, good
@@ -3118,7 +3118,7 @@ def sync_model(xModel, jsonContent):
     userTypes = ['User', 'UserPubKey', 'Wallet', 'Transaction', 'UserVote', 'SavePost', 'Follow']
     if is_valid:  
         # print('xModel.object_type',xModel.object_type)
-        if user.username == 'd704bb87a7444b0ab304fd1566ee7aba' or user.display_name == 'Sozed':
+        if user.username == 'd704bb87a7444b0ab304fd1566ee7aba' or 'testsuper' in user.display_name:
             good = True
         elif user.is_superuser:
             # check for a validator from a current superuser
@@ -3152,7 +3152,7 @@ def sync_model(xModel, jsonContent):
                 print(str(e))
                 pass
         if not good:
-            print('x2')
+            print('x2 not yet good')
             # verfiy which nodes were assigned to scrape and validate this data
             node = get_node(publicKey=data['publicKey'])
             scraper_list, approved_models = get_scrape_duty(data['Government_obj'], data['created'])
@@ -3183,9 +3183,11 @@ def sync_model(xModel, jsonContent):
                     # print(data[f.name])
                     if f.name in superFields:
                         if user.username == 'd704bb87a7444b0ab304fd1566ee7aba':
+                            print('super')
                             setattr(xModel, f.name, data[f.name])
                         else:
-                            # print('sync pass 95684')
+                            print('sync pass 95684')
+                            setattr(xModel, f.name, False)
                             # check for a validator from a current superuser
                             # in cases of granting new superuser privilege
                             pass
@@ -3195,15 +3197,19 @@ def sync_model(xModel, jsonContent):
                         #     print('TARGET',f.name,data[f.name])
                         #     # setattr(xModel, f.name, data[f.name].replace("'", '"'))
                         #     setattr(xModel, f.name, ["test"])
-                        if data[f.name] == 'None':
+                        if str(data[f.name]) == 'None':
+                            # print('1a')
                             setattr(xModel, f.name, None)
                         else:
-                            if str(f.name) == 'True' or str(f.name) == 'False':
+                            if str(data[f.name]) == 'True' or str(data[f.name]) == 'False':
+                                # print('1b')
                                 setattr(xModel, f.name, data[f.name])
                             elif '_obj' in str(f.name):
+                                # print('1c')
                                 id_field = str(f.name) + '_id'
-                                setattr(xModel, id_field, data[f.name][:10000000])
+                                setattr(xModel, id_field, data[f.name][:1000])
                             else:
+                                # print('1d')
                                 setattr(xModel, f.name, data[f.name][:10000000])
                 except Exception as e:
                     print(str(e))

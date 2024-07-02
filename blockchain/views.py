@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from .models import Blockchain, Block, Node
 from accounts.models import Sonet, User, UserPubKey, verify_obj_to_data
-from posts.models import sync_and_share_object, sync_model, get_or_create_model, get_dynamic_model, search_and_sync_object, get_data_with_relationships, find_or_create_chain_from_object, now_utc
-from blockchain.models import get_signing_data, round_time_down, downstream_broadcast, get_broadcast_peers, process_received_data, NodeChain_genesisId, ValidatorChain_genesisId, number_of_peers, required_validators, Validator, get_node, get_expanded_data, accessed, get_operatorData
+from posts.models import sync_and_share_object, sync_model, get_or_create_model, get_dynamic_model, search_and_sync_object, get_data_with_relationships, find_or_create_chain_from_object, now_utc, Region, Government
+from blockchain.models import get_signing_data, round_time_down, convert_to_dict, downstream_broadcast, get_broadcast_peers, process_received_data, NodeChain_genesisId, ValidatorChain_genesisId, number_of_peers, required_validators, Validator, get_node, get_expanded_data, accessed, get_operatorData
 from posts.utils import get_user_sending_data
 import datetime
 import hashlib
@@ -184,16 +184,127 @@ def broadcast_dataPackets_view(request):
     # happens when self_node declares self inactive
     pass
 
+def chainTest_view(request):
+    print('chainTest_view')
+    # upk = UserPubKey.objects.all()[0]
+    # print(convert_to_dict(upk))
+    # print()
+    # user = User.objects.filter(display_name='test2')[0]
+    # print(convert_to_dict(user))
+    # print()
+    # print(get_signing_data(user))
+    # print()
+    # is_valid, user = verify_obj_to_data(user, user, return_user=True)
+    # print('is_valid_end',is_valid)
+    # print()
+    def get_data(data, nodes, output=None):
+        for node in nodes:
+            response = requests.post('http://' + node + '/blockchain/request_data', data=data)
+            if response.status_code == 200:
+                received_json = response.json()
+                print('received_json',received_json)
+                if received_json['message'] == 'Found':
+                    if data['type'] == 'Blockchain':
+                        for chain in received_json['blockchain']:
+                            chainData = ast.literal_eval(chain)
+                            # if output:
+                            #     Clock.schedule_once(lambda dt, output=output, line=f'Received {chainData["genesisType"]} Chain: {chainData["genesisId"]}\n': update_output(output, line))
+                        print('send block')
+                        r = requests.post(f'http://127.0.0.1:3005/blockchain/receive_data', data={'data' : received_json['blockchain']})
+                        r_json = r.json()
+                        if r_json['message'] == 'Finished':
+                            print(r_json['result'])
+                            return {'result' : r_json['result'], 'chainData' : received_json['blockchain']}
+                        else:
+                            return {'result' : r_json}
+                    elif data['type'] == 'Block':
+                        # if output:
+                        #     Clock.schedule_once(lambda dt, output=output, line=f'Received Block {index}\n': update_output(output, line))
+                        block = ast.literal_eval(received_json['block'])
+                        content = received_json['content']
+                        index = block['index']
+                        r = requests.post(f'http://127.0.0.1:3005/blockchain/receive_data', data={'data' : [received_json['block']]})
+                        if r.json()['message'] == 'Finished':
+                            print('send block content')
+                            for i in content:
+                                r = requests.post(f'http://127.0.0.1:3005/blockchain/receive_data', data={'data' : str([i])})
+                            return {'result' : 'True', 'index' : index}
+                        else:
+                            return {'result' : 'False', 'index' : index}
+                    else:
+                        receivedData = json.loads(received_json['data'])
+                        try:
+                            index = received_json['index']
+                        except:
+                            index = 'NA'
+                        # print('receivedData', receivedData)
+                        # if output:
+                        #     Clock.schedule_once(lambda dt, output=output, line=f'Received data.\n': update_output(output, line))
+                        for i in receivedData:
+                            # i = ast.literal_eval(i)
+                            print(i)
+                            r = requests.post(f'http://127.0.0.1:3005/blockchain/receive_data', data={'data' : str([i])})
+                            r_json = r.json()
+                            if r_json['message'] == 'Finished':
+                                print(r_json['result'])
+                            else:
+                                print(r_json)
+                        if index != 'NA' and len(receivedData) >= 250:
+                            data['index'] = index
+                            get_data(data, nodes, output=output)
+                        return {'result' : 'True'}
+                else:
+                    print(received_json)
+                    return {'result' : 'False', 'message' : received_json}
+            else:
+                print(response)
+                return {'result' : 'False', 'message' : response}
+        return {'result' : 'False', 'message' : 'no responses'}
+
+    def get_chain(genesisId, nodes, output=None):
+        data = {'obj_type' : 'Blockchain', 'genesisId' : genesisId}
+        result = get_data(data, nodes, output=output)
+        if result['result'] == 'True':
+            for chain in result['chainData']:
+                chainData = ast.literal_eval(chain)
+                chain_length = chainData['chain_length']
+                data = {'type' : 'Block', 'blockchainId' : chainData['id'], 'index' : chain_length}
+                r = requests.post(f'http://127.0.0.1:3005/blockchain/check_if_exists', data=chain)
+                r_json = r.json()
+                if r_json['message'] == 'Not Found':
+                    index = int(chain_length)
+                    while index >= 0:
+                        data = {'type' : 'Block', 'blockchainId' : chainData['id'], 'index' : index}
+                        r = requests.post(f'http://127.0.0.1:3005/blockchain/check_if_exists', data=chain)
+                        r_json = r.json()
+                        if r_json['message'] == 'Found':
+                            break
+                        else:
+                            index -= 1
+                    while index < chain_length:
+                        data = {'type' : 'Block', 'blockchainId' : chainData['id'], 'index' : index}
+                        result = get_data(data, nodes, output=output)
+                        index += 1
+        else:
+    
+            print(result)
+    
+    data = {'type' : 'User', 'items' : 'All', 'index' : 0}
+    get_data(data, ['127.0.0.1:3005'])
+
 @csrf_exempt
 def receive_data_view(request):
+    print('receive_data_view')
     try:
         # different types of data should be processed differently
         # ex block should check validation consensus when received, note process_received_block()
         # check sender of content, do not accept if node.disavowed
         if request.method == 'POST':
             data = ast.literal_eval(request.POST.get('data'))
+            # print('data',data)
             # items = request.POST.get('items')
             result = process_received_data(data)
+            print('result', result)
             return JsonResponse({'message' : 'Finished', 'result' : str(result)})
 
     except Exception as e:
@@ -201,73 +312,75 @@ def receive_data_view(request):
 
 @csrf_exempt
 def request_data_view(request):
-    try:
-        err = 'x'
-        if request.method == 'POST':
-            obj_type = request.POST.get('type')
-            if obj_type == 'Blockchain':
-                genesisId = request.POST.get('genesisId')
-                # if genesisId == 'New', 'SoMeta', 'Transactions', 'Nodes
-                try:
-                    if genesisId == 'Nodes':
-                        chain = Blockchain.objects.filter(genesisType=genesisId)[0]
-                        chains = [model_to_dict(chain)]
-                    elif genesisId == 'SoMeta':
-                        chain = Blockchain.objects.filter(genesisType=genesisId)[0]
-                        # retreive validator chain as well
-                        validatorChain = Blockchain.objects.filter(validatesPointerId=chain.id)[0]
-                        chains = [model_to_dict(validatorChain), model_to_dict(chain)]
-                    else:
-                        chain = Blockchain.objects.filter(genesisId=genesisId)[0]
-                        # retreive validator chain as well
-                        validatorChain = Blockchain.objects.filter(validatesPointerId=chain.id)[0]
-                        chains = [model_to_dict(validatorChain), model_to_dict(chain)]
-                    return JsonResponse({'message' : 'Found', 'blockchain' : chains})
-                except Exception as e:
-                    return JsonResponse({'message' : 'Not Found', 'genesisId' : genesisId, 'error' : str(e)})
-            elif obj_type == 'Block':
-                index = request.POST.get('index')
-                blockchainId = request.POST.get('blockchainId')
-                # for i in items:
-                try:
-                    chain = Blockchain.objects.filter(id=blockchainId)[0]
-                except Exception as e:
-                    return JsonResponse({'message' : 'Not Found', 'chainId' : blockchainId, 'error' : str(e)})
-                try:
-                    block = Block.objects.filter(blockchainId=chain.id)[index]
-                    if chain.genesisType == 'Nodes' and chain.chain_length > block.index:
-                        # only return data content from newest block on 'Nodes' chain
-                        block_content = []
-                    else:
-                        block_content = block.get_full_data()
-                    return JsonResponse({'message' : 'Found', 'block' : model_to_dict(block), 'content' : str(block_content)})
-                except Exception as e:
-                    return JsonResponse({'message' : 'Not Found', 'blockchainId' : blockchainId, 'index' : index, 'error' : str(e)})
+    # try:
+    err = 'x'
+    if request.method == 'POST':
+        obj_type = request.POST.get('type')
+        if obj_type == 'Blockchain':
+            genesisId = request.POST.get('genesisId')
+            # if genesisId == 'New', 'SoMeta', 'Transactions', 'Nodes
+            try:
+                if genesisId == 'Nodes':
+                    chain = Blockchain.objects.filter(genesisType=genesisId)[0]
+                    chains = [model_to_dict(chain)]
+                elif genesisId == 'SoMeta':
+                    chain = Blockchain.objects.filter(genesisType=genesisId)[0]
+                    # retreive validator chain as well
+                    validatorChain = Blockchain.objects.filter(validatesPointerId=chain.id)[0]
+                    chains = [model_to_dict(validatorChain), model_to_dict(chain)]
+                else:
+                    chain = Blockchain.objects.filter(genesisId=genesisId)[0]
+                    # retreive validator chain as well
+                    validatorChain = Blockchain.objects.filter(validatesPointerId=chain.id)[0]
+                    chains = [model_to_dict(validatorChain), model_to_dict(chain)]
+                return JsonResponse({'message' : 'Found', 'blockchain' : chains})
+            except Exception as e:
+                return JsonResponse({'message' : 'Not Found', 'genesisId' : genesisId, 'error' : str(e)})
+        elif obj_type == 'Block':
+            index = request.POST.get('index')
+            blockchainId = request.POST.get('blockchainId')
+            # for i in items:
+            try:
+                chain = Blockchain.objects.filter(id=blockchainId)[0]
+            except Exception as e:
+                return JsonResponse({'message' : 'Not Found', 'chainId' : blockchainId, 'error' : str(e)})
+            try:
+                block = Block.objects.filter(blockchainId=chain.id)[index]
+                if chain.genesisType == 'Nodes' and chain.chain_length > block.index:
+                    # only return data content from newest block on 'Nodes' chain
+                    block_content = []
+                else:
+                    block_content = block.get_full_data()
+                return JsonResponse({'message' : 'Found', 'block' : model_to_dict(block), 'content' : str(block_content)})
+            except Exception as e:
+                return JsonResponse({'message' : 'Not Found', 'blockchainId' : blockchainId, 'index' : index, 'error' : str(e)})
 
+        else:
+            items = request.POST.get('items')
+            index = 'NA'
+            if items == 'All':
+                index = request.POST.get('index')
+                models = get_dynamic_model(obj_type, list=[int(index), int(index) + 500])
+                index = int(index) + 500
+            elif obj_type == 'Region' and items == 'networkSupported':
+                err = '1'
+                index = request.POST.get('index')
+                err = '2'
+                models = get_dynamic_model(obj_type, list=[int(index), int(index) + 500], is_supported=True)
+                err = '3'
+                index = int(index) + 500
             else:
-                items = request.POST.get('items')
-                index = 'NA'
-                if items == 'All':
-                    index = request.POST.get('index')
-                    models = get_dynamic_model(obj_type, list=[int(index), int(index) + 500])
-                    index = int(index) + 500
-                elif obj_type == 'Region' and items == 'networkSupported':
-                    err = '1'
-                    index = request.POST.get('index')
-                    err = '2'
-                    models = get_dynamic_model(obj_type, list=[int(index), int(index) + 500], is_supported=True)
-                    err = '3'
-                    index = int(index) + 500
-                else:
-                    models = get_dynamic_model(obj_type, list=True, id__in=items)
-                if models:
-                    err = '4'
-                    data_to_send = [model_to_dict(obj) for obj in models if verify_obj_to_data(obj, obj)]
-                    return JsonResponse({'message' : 'Found', 'data' : str(data_to_send), 'index' : index})
-                else:
-                    return JsonResponse({'message' : 'Not Found'})
-    except Exception as e:
-        return JsonResponse({'message' : 'Fail', 'error' : str(e) + '/' + err})
+                models = get_dynamic_model(obj_type, list=True, id__in=items)
+            if models:
+                print('has models')
+                err = '4'
+                data_to_send = [convert_to_dict(obj) for obj in models if verify_obj_to_data(obj, obj)]
+                # print(data_to_send)
+                return JsonResponse({'message' : 'Found', 'data' : json.dumps(data_to_send), 'index' : index})
+            else:
+                return JsonResponse({'message' : 'Not Found'})
+    # except Exception as e:
+    #     return JsonResponse({'message' : 'Fail', 'error' : str(e) + '/' + err})
 
 def receive_posts_for_validating_view(request):
     # receive data from scraper node
@@ -277,6 +390,51 @@ def receive_posts_for_validating_view(request):
     # broadcast validator and first created items, delete copy items
     # take special note of receiving keyphrase or notification
     pass
+
+
+def get_network_data_view(request):
+    print('get_supported_chains_view')
+    # returns genesisId of supported region chains, genesisId == region.id
+    # print(Region.objects.all())
+    earth = Region.objects.filter(Name='Earth')[0]
+    regions = {'Earth':{'type':earth.nameType,'id':earth.id,'children':[]}}
+    def get_children(parent, children_list):
+        children = Region.objects.filter(ParentRegion_obj=parent).order_by('Name')
+        # children = Update.objects.filter(pointerType='Region', data__icontains='"is_supported": true', Region_obj__ParentRegion_obj=parent.Region_obj)
+        for child in children:
+            print(convert_to_dict(child))
+            try:
+                gov = Government.objects.filter(Region_obj=child)[0]
+                govData = {gov.gov_level:{'obj_type':gov.object_type,'type':'Government','id':gov.id,'regionId':gov.Region_obj.id,'children':[]}}
+            except:
+                govData = None
+            data = {child.Name:{'obj_type':child.object_type,'type':child.nameType,'id':child.id,'children':[]}}
+            if govData:
+                data[child.Name]['children'].append(govData)
+            children_list.append(data)
+            new_list = data[child.Name]['children']
+            xlist = get_children(child, new_list)
+            new_list = data[child.Name]['children'] = xlist
+        return children_list
+
+    xlist = get_children(earth, regions['Earth']['children'])
+    # print()
+    regions['Earth']['children'] = xlist
+    # print(regions)
+    # json_data = serializers.serialize('json', [obj])
+    # print(json_data)
+    # special chains will consist of 'New' 'Transactions' and 'SoMeta'
+    try:
+        sonet = get_signing_data(Sonet.objects.first())
+    except:
+        sonet = None
+    return JsonResponse({'specialChains' : None, 'regionChains' : regions, 'sonet' : sonet})
+    
+
+
+
+
+
 
 
 def request_item(request, item_type, item_id):

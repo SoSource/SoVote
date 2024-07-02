@@ -825,6 +825,27 @@ def check_dataPacket(obj):
     else:
         return False
 
+def convert_to_dict(obj):
+    # print('convert_to_dict')
+    # print(obj)
+    d1 = {'object_type' : obj.object_type}
+    d2 = model_to_dict(obj)
+    # print(d)
+    # print()
+    # d['object_type'] = obj.object_type
+    for key, value in d2.items():
+        # print(key, value)
+        try:
+        #     if isinstance(datetime, value):
+        # d[key] = value
+            d2[key] = datetime.datetime.isoformat(value)
+        except Exception as e:
+        #     print(str(e))
+            pass
+    # print()
+    new_dict = {**d1, **d2}
+    return new_dict
+
 def get_node_list(sort='-last_updated'):
     # nu = NodeUpdate.objects.exclude(deactivated=True).distinct('pointerId').order_by(sort)
     nodes = Node.objects.filter(deactivated=False).order_by(sort)
@@ -889,10 +910,13 @@ def get_relevant_nodes_from_block(dt=None, genesisId=None, ai_capable=False, fir
     print('get nodes from b lock')
     try:
         chain = Blockchain.objects.filter(genesisType='Nodes', genesisId='1')[0]
+        print(chain)
+        print(dt)
         if not dt:
             dt = round_time_down(now_utc())
         else:
             dt = round_time_down(dt)
+        print(dt)
         node_block = Block.objects.filter(Blockchain_obj=chain, datetime=dt)[0]
         data = json.loads(node_block.data)
 
@@ -1127,13 +1151,13 @@ skip_fields = [
                'pointerPublicKey','pointerDateTime', 'Update_obj', 'hash',
                'coins', 'is_valid', 'slug', 'last_login', 'date_joined',
                'deactivated_time', 'deactivated', 'appToken', 'isVerified',
-               'blockchainId'
+               'blockchainId', 'groups', 'user_permissions'
                ]
  
 def get_signing_data(obj, extra_data=None):
     # WARNING changing this will break ALL signing and verification abilities
     # print()
-    # print('get signing data')
+    print('get signing data')
     # print('send_user_obj_to_user',send_user_obj_to_user)
     # print(obj)
 
@@ -1153,40 +1177,45 @@ def get_signing_data(obj, extra_data=None):
     data = {}
     # replaceUserArray = {}
     try:
-        data['object_type'] = obj.object_type
-        fields = obj._meta.fields
+        d = convert_to_dict(obj)
+        for key, value in d.items():
+            if key not in skip_fields:
+                data[key] = value
+
+        # data['object_type'] = obj.object_type
+        # fields = obj._meta.fields
         # print(fields)
         # print()
-        for f in fields:
-            if str(f.name) not in skip_fields:
-                # print(f.name)
-                # print()
-                # if send_user_obj_to_user == False and obj.object_type == 'User' and '_array' in str(f.name):
-                #     # print('target',str(getattr(obj, f.name)))
-                #     # '''["test"]'''
-                #     # q = ast.literal_eval("['test']")
-                #     # print('q',q)
-                #     target = f'replaceMe_{str(f.name)}'
-                #     data[f.name] = target
-                #     # print('xx',data[f.name])
-                #     # xx = str(getattr(obj, f.name))
-                #     replaceUserArray[target] = str(getattr(obj, f.name))
-                # else:
-                try:
-                    # x = getattr(obj, f.name)
-                    # print(x)
-                    # print(x.id)
-                    data[f.name] = getattr(obj, f.name).id
-                except Exception as e:
-                    # print(str(e))
-                    try:
-                        data[f.name] = str(getattr(obj, f.name))
-                    except Exception as e:
-                        # print(str(e))
-                        # print(extra_data)
-                        if 'matching query does not exist' in str(e):
-                            # only for creation of upk and wallet, must have User_obj.id but User not yet created
-                            data[f.name] = extra_data[f.name]
+        # for f in fields:
+        #     if str(f.name) not in skip_fields:
+        #         # print(f.name)
+        #         # print()
+        #         # if send_user_obj_to_user == False and obj.object_type == 'User' and '_array' in str(f.name):
+        #         #     # print('target',str(getattr(obj, f.name)))
+        #         #     # '''["test"]'''
+        #         #     # q = ast.literal_eval("['test']")
+        #         #     # print('q',q)
+        #         #     target = f'replaceMe_{str(f.name)}'
+        #         #     data[f.name] = target
+        #         #     # print('xx',data[f.name])
+        #         #     # xx = str(getattr(obj, f.name))
+        #         #     replaceUserArray[target] = str(getattr(obj, f.name))
+        #         # else:
+        #         try:
+        #             # x = getattr(obj, f.name)
+        #             # print(x)
+        #             # print(x.id)
+        #             data[f.name] = getattr(obj, f.name).id
+        #         except Exception as e:
+        #             # print(str(e))
+        #             try:
+        #                 data[f.name] = str(getattr(obj, f.name))
+        #             except Exception as e:
+        #                 # print(str(e))
+        #                 # print(extra_data)
+        #                 if 'matching query does not exist' in str(e):
+        #                     # only for creation of upk and wallet, must have User_obj.id but User not yet created
+        #                     data[f.name] = extra_data[f.name]
         # print('--1')
         # print('json',data)
         # print('dump:',json.dumps(data, separators=(',', ':')))
@@ -1199,7 +1228,7 @@ def get_signing_data(obj, extra_data=None):
         # #     print('not found')
         # for key, value in replaceUserArray.items():
         #     json_dump = json_dump.replace(f'"{key}"', value)
-        # # print('json_dump', json_dump)
+        # print('json_dump1', json_dump)
         return json_dump
     except Exception as e:
         # print(str(e))
@@ -1213,7 +1242,7 @@ def get_signing_data(obj, extra_data=None):
             if str(f) not in skip_fields:
                 data[f] = obj[f]
     # print('-------')
-    # x = json.dumps(data, separators=(',', ':'))
+    json_dump = json.dumps(data, separators=(',', ':'))
     # print(x)
     # print()
     # print(json.loads(x))
@@ -1223,7 +1252,8 @@ def get_signing_data(obj, extra_data=None):
         # print(json.dumps(data, separators=(',', ':')))
     # print('----3')
     # print(json.loads(str(data)))
-    return json.dumps(data, separators=(',', ':'))
+    # print('json_dump2', json_dump)
+    return json_dump
 
 def get_full_data(obj):
     data = {}
@@ -1370,14 +1400,20 @@ def find_or_create_chain_from_json(obj):
     return blockchain
 
 def hash_to_int(hash, length):
+    print(hash, length)
     decimal_value = int(hash, 16)
-    return decimal_value % length
+    print(decimal_value)
+    if length == 0:
+        return 0
+    else:
+        return decimal_value % length
 
 def date_to_int(date):
     dtimestamp = date.timestamp()
+    print('dtimestamp',dtimestamp)
     hours = int(round(dtimestamp))/60/60 
     result = hours % 450000
-
+    print('result',result)
     return result
 
 def get_most_recent_even_hour(dt=None):
@@ -1642,15 +1678,19 @@ def get_scraping_order(iden=1, func_name=None, dt=None):
     #     region_id = region_json['id']
     
     master_node_list = get_relevant_nodes_from_block(dt=dt)
-
+    print('master_node_list',master_node_list)
     text_bytes = str(func_name).encode('utf-8')
     sha256_hash = hashlib.sha256(text_bytes).hexdigest()
+    print('0a')
     name_position = hash_to_int(sha256_hash, len(master_node_list))
-
+    print('1')
     date_int = date_to_int(dt)
+    print('1a')
     id_position = hash_to_int(iden, len(master_node_list))
+    print('id_position',id_position)
     position = name_position + id_position + date_int
-
+    print('position',position)
+    print('2')
     def run(position, node_list):
         if position > len(node_list):
             position = position % len(node_list)
@@ -1913,6 +1953,7 @@ def validate_post(obj):
     return obj
 
 def process_received_data(received_data, block_data=None):
+    print('process_received_data')
     from accounts.models import User
     from posts.models import sync_model, find_or_create_chain_from_object, get_or_create_model, get_dynamic_model
     # specialTypes = ['Node', 'User'] # sync previous data, do not write to chain
@@ -1923,9 +1964,10 @@ def process_received_data(received_data, block_data=None):
             objs[i['object_type']].append(i['id'])
         except:
             objs[i['object_type']] = [i['id']]
+    print('objs', objs)
     not_found = []
     # mismatchedData = []
-    for obj_type, idList in objs:
+    for obj_type, idList in objs.items():
         existing = get_dynamic_model(obj_type, list=True, id__in=idList)
         if block_data:
             # block data is official data locked to chain
@@ -1941,12 +1983,13 @@ def process_received_data(received_data, block_data=None):
                         obj, good = sync_model(e, target_json)
                         # mismatchedData.append([e, target_json])
             # else:
+        print('existing', existing)
         eList = [e.id for e in existing]
         for i in idList:
             if i not in eList:
                 not_found.append(i)
 
-    
+    print('next')
     # should check if data is already present but with different id
     # for example, Government update['endDate'] could be created by multiple nodes at once
     # should check who was selected to be scraper of that data at that time
@@ -1958,7 +2001,8 @@ def process_received_data(received_data, block_data=None):
     # perhaps adjust so that Node creates a validator for User, nodeUpdate, UserVOte, Userpubkey, SavePost, Sonet when sending dataPacket
     # nodes and block validators are broadcast instantly, not with dataPacket
 
-    scraping_order = get_scraping_order()
+    # scraping_order = get_scraping_order()
+    print('stage2')
     for i in received_data:
         hashMatch = True
         if block_data:

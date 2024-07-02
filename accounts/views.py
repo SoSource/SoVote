@@ -1362,6 +1362,7 @@ def receive_user_login_view(request):
                             try:
                                 # print('try')
                                 user = get_or_create_model(userData['object_type'], id=userData['id'])
+                                # print('u2')
                                 # upk.User_obj = user
                                 user, good = sync_and_share_object(user, userData)
                                 # print('done user22',user)
@@ -1383,9 +1384,14 @@ def receive_user_login_view(request):
                             except Exception as e:
                                 print(str(e))
 
+
+                        # print()
+                        # print('newU', user)
                         new_user_valid = upk.verify(get_signing_data(user), signature)
                         print('new_user_valid',new_user_valid)
-                        # print()
+                        if not new_user_valid:
+                            proceed_to_login = False
+                        print()
                         # print('signingdata',get_signing_data(userData))
                         # print()
                         # print('signinguser', get_signing_data(user))

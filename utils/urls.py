@@ -58,7 +58,6 @@ urlpatterns = [
 
     #----utils
     path('is_sonet', util_views.is_sonet_view),
-    path('get_network_data', util_views.get_network_data_view),
     path('set_object_data', util_views.set_object_data_view),
     path('get_object_data', util_views.get_object_data_view),
 

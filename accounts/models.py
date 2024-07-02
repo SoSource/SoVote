@@ -174,8 +174,10 @@ class User(AbstractUser):
 
     def verify(self, data, signature_hex):
         # print('verify')
+        # print(data)
         pubKeys = UserPubKey.objects.filter(User_obj=self)
         for p in pubKeys:
+            # print('pkey',p.publicKey)
             is_valid = p.verify(data, signature_hex)
             if is_valid:
                 return True
@@ -402,7 +404,7 @@ def sign(private_key, data):
     return signature_hex
 
 def verify_obj_to_data(obj, data, return_user=False):
-    # print('verify_obj_to_data')
+    print('verify_obj_to_data')
     # verify an object against itself or against proposed updateData
     from blockchain.models import get_user, get_signing_data
     # print('obj', obj.__dict__)
@@ -495,11 +497,13 @@ class UserPubKey(BaseAccountModel):
         ordering = ['-created', 'id']
 
     def verify(self, data, signature_hex):
+        # print()
+        # print('upk_validate:', signature_hex, self.publicKey, data)
         signature_bytes = bytes.fromhex(signature_hex)
-        # print(signature_bytes.hex())
+        # print('signature_bytes',signature_bytes)
         public_key_bytes = bytes.fromhex(self.publicKey)
         public_key = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256K1(), public_key_bytes)
-        # print('pubkey loaded', publicKey)
+        # print('pubkey loaded', self.publicKey)
         try:
             public_key.verify(signature_bytes, data.encode('utf-8'), ec.ECDSA(hashes.SHA256()))
             print("Signature is valid YAY IT WORKED!!!.")
@@ -507,7 +511,7 @@ class UserPubKey(BaseAccountModel):
         # except InvalidSignature:
         #     print("Invalid signature.")
         except Exception as e:
-            print(str(e))
+            # print('failverify', str(e))
             return False
 
     def save(self, share=True, *args, **kwargs):

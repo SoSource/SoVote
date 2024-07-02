@@ -8,6 +8,10 @@ urlpatterns = [
     path('declare_node_state', chain_views.declare_node_state_view),
     path('get_broadcast_list', chain_views.get_broadcast_list_view),
     path('get_current_node_list', chain_views.get_current_node_list_view),
+    path('get_network_data', chain_views.get_network_data_view),
+
+    path('chainTest', chain_views.chainTest_view),
+
 
     path('receive_data_packet', chain_views.receive_data_packet_view),
     path('receive_posts_for_validating', chain_views.receive_posts_for_validating_view),

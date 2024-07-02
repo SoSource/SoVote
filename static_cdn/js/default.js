@@ -348,11 +348,11 @@ async function signReturnInteraction({ response, item }) {
     }
     
   } else if (data['object_type'] == 'SavePost') {
-    if (data.saved == 'False') {
-      data.saved = 'True'
+    if (data.saved == false) {
+      data.saved = true
       post_save_state = true
     } else {
-      data.saved = 'False'
+      data.saved = false
       post_save_state = false
     }
   }
@@ -1133,7 +1133,7 @@ async function verifyUserData(userData, localData=false) {
     }
   }
 
-  userData.must_rename = 'False'
+  userData.must_rename = false
   var s = userData.signature
   // var pk = parsedData.publicKey
   delete userData.publicKey
@@ -1247,12 +1247,12 @@ async function handleLoginResponse({ response, item }) {
 
         userData = receivedUserData
         // userArrayData = receivedUserArrayData
-        if (userData['id'] == 'd704bb87a7444b0ab304fd1566ee7aba') {
-          userData['is_superuser'] = 'True'
-          // userData['is_admin'] = true
-          userData['is_staff'] = 'True'
-          userData['username'] = 'd704bb87a7444b0ab304fd1566ee7aba'
-        }
+        // if (userData['id'] == 'd704bb87a7444b0ab304fd1566ee7aba') {
+        // userData['is_superuser'] = true
+        // // userData['is_admin'] = true
+        // userData['is_staff'] = true
+          // userData['username'] = 'd704bb87a7444b0ab304fd1566ee7aba'
+        // }
         console.log('sign sign_userData')
         userData = await sign_userData(userData, privKey=keyPair[0], pubKey=keyPair[1])
       } else if ((message == 'User found')) {
@@ -2023,8 +2023,8 @@ function expand_received_userData(userData) {
 async function update_userData(userData) {
   console.log('update_userData')
   receivedUserData = JSON.parse(userData)
-  if (receivedUserData.must_rename == 'true' || receivedUserData.must_rename == 'True') {
-    receivedUserData.must_rename = 'False'
+  if (receivedUserData.must_rename == true || receivedUserData.must_rename == 'true') {
+    receivedUserData.must_rename = false
     engage_rename = true
   } else {
     engage_rename = false
@@ -2227,7 +2227,7 @@ function formatDateToDjango(isoString) {
   const seconds = pad(date.getUTCSeconds());
   const milliseconds = pad(date.getUTCMilliseconds(), 3) + '000'; // Add three zeros to match six digits format
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}+00:00`;
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}+00:00`;
 }
 
 async function check_instructions(page) {

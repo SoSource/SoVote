@@ -426,6 +426,19 @@ def test_view(request):
 
 def splash_view(request):
     # try:
+    #     user = request.user
+    #     upk = UserPubKey.objects.filter(User_obj=user)[0]
+    #     new_user_valid = upk.verify(get_signing_data(user), user.signature)
+    #     print('new_user_valid',new_user_valid)
+    #     print('user.signature',user.signature)
+    #     print('user.publicKey',user.publicKey)
+    #     print('upk.publicKey',upk.publicKey)
+    # except Exception as e:
+    #     print(str(e))
+
+    # print('!!!',datetime.datetime.isoformat(now_utc()))
+    
+    # try:
     #     u = User.objects.filter(username='dad')[0]
     # except:
     #     u = User(username='dad', display_name='dad', is_superuser=True, is_staff=True)
@@ -457,6 +470,8 @@ def home_view(request, region):
     user_data, user = get_user_data(request)
     country, provState, provState_name, municipality, municipality_name = get_regions(request, region, user)
     
+
+
     style = request.GET.get('style', 'index')
 
     sort = request.GET.get('sort', 'recent')
