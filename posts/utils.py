@@ -342,7 +342,7 @@ def get_cookies(request, c, country=None):
     try:
         sonet = Sonet.objects.all()[0]
     except:
-        sonet = {'title' : 'sonet', 'LogoLink' : "/static/img/default_logo.png"}
+        sonet = {'Title' : 'Sonet', 'LogoLink' : "/static/img/default_logo.png"}
     print('sonet', sonet)
     context = {
         "sonet": sonet,

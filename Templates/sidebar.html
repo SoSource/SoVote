@@ -5,10 +5,13 @@
     <div>
         <ul class='notifications' id='firstPane'>
                             
-                
-            {% for n in notifications %}
-                <li class='notification' id={{ n.id }}><a href={{ n.link }} style='text-decoration:none;'>{{ n.title }}</a><span onclick="removeNotification('{{ n.id }}')">X</span></li>
-            {% endfor %} 
+            {% if notification %}
+                {% for n in notifications %}
+                    <li class='notification' id={{ n.id }}><a href={{ n.link }} style='text-decoration:none;'>{{ n.title }}</a><span onclick="removeNotification('{{ n.id }}')">X</span></li>
+                {% endfor %}
+            {% else %}
+                <li>No Notifications</li>
+            {% endif %}
             {% comment %}
             <br>
             <li onclick="addNotification('go')">add test notification</li>
@@ -22,7 +25,6 @@
     <div>
         <ul class='notifications' id='secondPane'>
             <li>Coming Soon</li>
-            <li></li>
             <li></li>
             {% comment %}
             <li>MP|Pierre Poilievre</li>
