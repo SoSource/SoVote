@@ -13,6 +13,7 @@ import django_rq
 from rq import Queue
 # import socket
 import requests
+import ast
 from urllib.parse import urlparse
 from django.http import JsonResponse, HttpResponse, HttpRequest
 from django.views.decorators.csrf import csrf_exempt
@@ -190,7 +191,7 @@ def receive_data_view(request):
         # ex block should check validation consensus when received, note process_received_block()
         # check sender of content, do not accept if node.disavowed
         if request.method == 'POST':
-            data = request.POST.get('data')
+            data = ast.literal_eval(request.POST.get('data'))
             # items = request.POST.get('items')
             result = process_received_data(data)
             return JsonResponse({'message' : 'Finished', 'result' : str(result)})
