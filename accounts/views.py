@@ -1360,9 +1360,11 @@ def receive_user_login_view(request):
                         is_valid = upk.verify(get_signing_data(walletData), walletSignature)
                         if is_valid:
                             try:
+                                # print('try')
                                 user = get_or_create_model(userData['object_type'], id=userData['id'])
                                 # upk.User_obj = user
                                 user, good = sync_and_share_object(user, userData)
+                                # print('done user22',user)
                                 user.slug = user.slugger()
                                 user.save()
                                 print('user-good',good)

@@ -173,6 +173,7 @@ class User(AbstractUser):
     #     return UserOptions.object.filter(user=self).order_by('-created')[0]
 
     def verify(self, data, signature_hex):
+        # print('verify')
         pubKeys = UserPubKey.objects.filter(User_obj=self)
         for p in pubKeys:
             is_valid = p.verify(data, signature_hex)
@@ -400,11 +401,14 @@ def sign(private_key, data):
     # data['signature'] = signature_hex
     return signature_hex
 
-def verify_obj_to_data(obj, data):
+def verify_obj_to_data(obj, data, return_user=False):
+    # print('verify_obj_to_data')
     # verify an object against itself or against proposed updateData
     from blockchain.models import get_user, get_signing_data
+    # print('obj', obj.__dict__)
+    # print('data', data)
     user = None
-    if isinstance(dict, data):
+    if isinstance(data, dict):
         iden = data['id']
         pubKey = data['publicKey']
         sig = data['signature']
@@ -412,32 +416,38 @@ def verify_obj_to_data(obj, data):
         iden = data.id
         pubKey = data.publicKey
         sig = data.signature
-    try:
-        user = obj.User_obj
-        if not user:
-            fail
-    except:
+    if obj.object_type == 'User':
+        user = obj
+    else:
         try:
-            user = obj.Node_obj.User_obj
+            user = obj.User_obj
             if not user:
                 fail
         except:
             try:
-                user = obj.CreatorNode_obj.User_obj
+                user = obj.Node_obj.User_obj
                 if not user:
                     fail
             except:
                 try:
-                    user = get_user(user_id=iden)
+                    user = obj.CreatorNode_obj.User_obj
                     if not user:
                         fail
-                except Exception as e:
-                    user = get_user(public_key=pubKey)
+                except:
+                    try:
+                        user = get_user(user_id=iden)
+                        if not user:
+                            fail
+                    except Exception as e:
+                        user = get_user(public_key=pubKey)
 
-    print('user',user)
+    print('user-',user)
     is_valid = user.verify(get_signing_data(data), sig)
     print('is_valid', is_valid)
-    return is_valid
+    if return_user:
+        return is_valid, user
+    else:
+        return is_valid
 
 def add_or_verify_pubkey(user, registeredPublicKey, newPublicKey, signature):
     # print('verify registeredpubkey', registeredPublicKey)

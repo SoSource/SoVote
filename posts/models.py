@@ -3064,7 +3064,8 @@ def set_keywords(obj, direction, topic):
 
 def sync_model(xModel, jsonContent):
     from blockchain.models import get_user, get_node, get_signing_data, get_scrape_duty, number_of_scrapers
-    print('sync model')
+    from accounts.models import verify_obj_to_data
+    print('sync model**')
     good = False
     try:
         # data may or not be json
@@ -3113,7 +3114,7 @@ def sync_model(xModel, jsonContent):
     # print('data2:', str(get_signing_data(data)))
     # print()
     # is_valid = user.verify(get_signing_data(data), data['signature'])
-    is_valid = verify_obj_to_data(xModel, data)
+    is_valid, user = verify_obj_to_data(xModel, data, return_user=True)
     userTypes = ['User', 'UserPubKey', 'Wallet', 'Transaction', 'UserVote', 'SavePost', 'Follow']
     if is_valid:  
         # print('xModel.object_type',xModel.object_type)
@@ -3170,6 +3171,7 @@ def sync_model(xModel, jsonContent):
                     break
 
         if good:
+            # print('is good')
             # print(xModel.__dict__['_wrapped'].__dict__)
             fields = xModel._meta.fields
             # print(fields)
