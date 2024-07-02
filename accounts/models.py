@@ -53,7 +53,7 @@ class Sonet(models.Model):
     signature = models.CharField(max_length=200, default="0")
 
     def __str__(self):
-        return 'Sonet:%s' %(self.title)
+        return 'Sonet:%s' %(self.Title)
     
     # def logo_link(self):
     #     return "static/img/%s" %(self.logoLink)
