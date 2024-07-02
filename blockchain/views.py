@@ -322,18 +322,18 @@ def request_data_view(request):
             try:
                 if genesisId == 'Nodes':
                     chain = Blockchain.objects.filter(genesisType=genesisId)[0]
-                    chains = [model_to_dict(chain)]
+                    chains = [convert_to_dict(chain)]
                 elif genesisId == 'SoMeta':
                     chain = Blockchain.objects.filter(genesisType=genesisId)[0]
                     # retreive validator chain as well
                     validatorChain = Blockchain.objects.filter(validatesPointerId=chain.id)[0]
-                    chains = [model_to_dict(validatorChain), model_to_dict(chain)]
+                    chains = [convert_to_dict(validatorChain), convert_to_dict(chain)]
                 else:
                     chain = Blockchain.objects.filter(genesisId=genesisId)[0]
                     # retreive validator chain as well
                     validatorChain = Blockchain.objects.filter(validatesPointerId=chain.id)[0]
-                    chains = [model_to_dict(validatorChain), model_to_dict(chain)]
-                return JsonResponse({'message' : 'Found', 'blockchain' : chains})
+                    chains = [convert_to_dict(validatorChain), convert_to_dict(chain)]
+                return JsonResponse({'message' : 'Found', 'blockchain' : json.dumps(chains)})
             except Exception as e:
                 return JsonResponse({'message' : 'Not Found', 'genesisId' : genesisId, 'error' : str(e)})
         elif obj_type == 'Block':
@@ -351,7 +351,7 @@ def request_data_view(request):
                     block_content = []
                 else:
                     block_content = block.get_full_data()
-                return JsonResponse({'message' : 'Found', 'block' : model_to_dict(block), 'content' : str(block_content)})
+                return JsonResponse({'message' : 'Found', 'block' : json.dumps(convert_to_dict(block)), 'content' : json.dumps(block_content)})
             except Exception as e:
                 return JsonResponse({'message' : 'Not Found', 'blockchainId' : blockchainId, 'index' : index, 'error' : str(e)})
 

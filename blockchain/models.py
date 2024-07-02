@@ -93,7 +93,7 @@ class DataPacket(models.Model):
                 import hashlib
                 for a in accessed:
                     # might want to use model_to_dict() instead of .__dict__
-                    text_bytes = str(model_to_dict(a)).encode('utf-8')
+                    text_bytes = str(convert_to_dict(a)).encode('utf-8')
                     sha256_hash = hashlib.sha256(text_bytes).hexdigest()
                     json_data.append({'object_type' : a.object_type, 'obj_id' : a.id, 'hash' : sha256_hash})
                 self.data = json.dump(json_data)
@@ -112,7 +112,7 @@ class DataPacket(models.Model):
             data, not_found = get_data(json.loads(self.data))     
             # successes = 0    
             # tried_nodes = []
-            json_data = {'type' : 'DataPacket', 'self_dict' : model_to_dict(self), 'broadcast_list' : broadcast_list, 'packet_data' : data}
+            json_data = {'type' : 'DataPacket', 'self_dict' : json.dumps(convert_to_dict(self)), 'broadcast_list' : broadcast_list, 'packet_data' : json.dumps(data)}
             downstream_broadcast(broadcast_list, 'receive_data_packet', json_data, self_dataPacket=True)
             
             
@@ -460,12 +460,12 @@ class Block(models.Model):
             for obj in nodes:
                 is_valid = verify_obj_to_data(obj, obj)
                 if is_valid:
-                    returnData.append(model_to_dict(obj))
+                    returnData.append(convert_to_dict(obj))
             nodeUpdates = NodeUpdate.objects.filter(pointerId__in=id_list)
             for obj in nodeUpdates:
                 is_valid = verify_obj_to_data(obj, obj)
                 if is_valid:
-                    returnData.append(model_to_dict(obj))
+                    returnData.append(convert_to_dict(obj))
 
         else:
             returnData, not_found = get_data(data) 
@@ -740,7 +740,7 @@ def broadcast_block(block, lst=None, validations=None):
     # json_data = json.loads(block.data)
     # block_data, not_found = get_data(json.loads(block.data))
     block_content = block.get_full_data()
-    json_data = {'type' : 'Blocks', 'broadcast_list': broadcast_list, 'blockchainId' : block.blockchainId, 'block_list' : [{'block_dict' : model_to_dict(block), 'block_data' : block_content, 'validations' : validations,}], 'end_of_chain' : True}
+    json_data = {'type' : 'Blocks', 'broadcast_list': broadcast_list, 'blockchainId' : block.blockchainId, 'block_list' : [{'block_dict' : json.dumps(convert_to_dict(block)), 'block_data' : json.dumps(block_content), 'validations' : validations,}], 'end_of_chain' : True}
     downstream_broadcast(lst, 'blockchain/receive_blocks', json_data)
 
 def get_operatorData():
@@ -1123,7 +1123,7 @@ def get_starting_position(object, node_id_list): # not used
 
 def get_hash(obj):
     # json_data = get_expanded_data(obj)
-    data = model_to_dict(obj)
+    data = convert_to_dict(obj)
     del data['hash']
     del data['is_valid']
     del data['signature']
@@ -2157,9 +2157,9 @@ def process_received_blocks(received_json):
                 json_data = {'type' : 'Block', 'broadcast_list': [], 'blockchainId' : blockchain.id, 'block_list' : []}
                 for return_block in Block.objects.filter(blockchainId=blockchain.id, index_gt=int(new_block['index'])):
                     validations = Validator.objects.filter(data__contains=return_block.id)
-                    validator_list = [model_to_dict(v) for v in validations]
+                    validator_list = [convert_to_dict(v) for v in validations]
                     data, not_found = get_data(json.loads(return_block.data))
-                    json_data['block_list'].append({'block_dict' : model_to_dict(return_block), 'block_data' : data, 'validations' : validator_list})
+                    json_data['block_list'].append({'block_dict' : json.dumps(convert_to_dict(return_block)), 'block_data' : json.dumps(data), 'validations' : validator_list})
                 success, response = connect_to_node(get_node(id=received_json['sender']['id']), 'blockchain/receive_blocks', json_data)
                 break
                 # resolve_block_differences(created_block, competing_blocks)
