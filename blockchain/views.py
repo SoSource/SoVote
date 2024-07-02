@@ -249,14 +249,14 @@ def request_data_view(request):
                 if items == 'All':
                     index = request.POST.get('index')
                     models = get_dynamic_model(obj_type, list=[int(index), int(index) + 500])
-                    index += 500
+                    index = int(index) + 500
                 elif obj_type == 'Region' and items == 'networkSupported':
                     err = '1'
                     index = request.POST.get('index')
                     err = '2'
                     models = get_dynamic_model(obj_type, list=[int(index), int(index) + 500], is_supported=True)
                     err = '3'
-                    index += 500
+                    index = int(index) + 500
                 else:
                     models = get_dynamic_model(obj_type, list=True, id__in=items)
                 if models:
