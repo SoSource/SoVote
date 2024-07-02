@@ -201,6 +201,7 @@ def receive_data_view(request):
 @csrf_exempt
 def request_data_view(request):
     try:
+        err = 'x'
         if request.method == 'POST':
             obj_type = request.POST.get('type')
             if obj_type == 'Blockchain':
@@ -250,18 +251,22 @@ def request_data_view(request):
                     models = get_dynamic_model(obj_type, list=[int(index), int(index) + 500])
                     index += 500
                 elif obj_type == 'Region' and items == 'networkSupported':
+                    err = '1'
                     index = request.POST.get('index')
+                    err = '2'
                     models = get_dynamic_model(obj_type, list=[int(index), int(index) + 500], is_supported=True)
+                    err = '3'
                     index += 500
                 else:
                     models = get_dynamic_model(obj_type, list=True, id__in=items)
                 if models:
+                    err = '4'
                     data_to_send = [model_to_dict(obj) for obj in models if verify_obj_to_data(obj, obj)]
                     return JsonResponse({'message' : 'Found', 'data' : str(data_to_send), 'index' : index})
                 else:
                     return JsonResponse({'message' : 'Not Found'})
     except Exception as e:
-        return JsonResponse({'message' : 'Fail', 'error' : str(e)})
+        return JsonResponse({'message' : 'Fail', 'error' : str(e) + '/' + err})
 
 def receive_posts_for_validating_view(request):
     # receive data from scraper node
