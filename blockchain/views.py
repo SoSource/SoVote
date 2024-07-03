@@ -32,7 +32,7 @@ def get_broadcast_list_view(request):
                 print()
                 # try:
                 obj_json = json.loads(request.POST.get('obj'))
-                obj = get_or_create_model(obj_json['object_type'], obj_json)
+                obj = get_or_create_model(obj_json['object_type'], **obj_json)
                 broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
                 return JsonResponse({'obj' : json.dumps(obj), 'broadcast_list' : json.dumps(broadcast_list), 'validator_list' : json.dumps(validator_list)})
                 # except:
@@ -77,7 +77,7 @@ def get_node_request_view(request, node_id):
         if node_id == 'self':
             operatorData = get_operatorData()
             node_obj = get_or_create_model('Node', id=operatorData['nodeId'])
-            response = JsonResponse({'message' : 'Success', 'nodeData' : json.dumps(get_signing_data(node_obj)), 'fullNodeData' : json.dumps(convert_to_dict(node_obj))})
+            response = JsonResponse({'message' : 'Success', 'nodeData' : get_signing_data(node_obj), 'fullNodeData' : json.dumps(convert_to_dict(node_obj))})
             return response
         else:
             try:
@@ -89,7 +89,7 @@ def get_node_request_view(request, node_id):
                 print('return 1')
                 nodeData = get_signing_data(node)
                 print('return sign data', nodeData)
-                return JsonResponse({'message' : 'Node found', 'nodeData' : json.dumps(nodeData), 'sonet' : sonet})
+                return JsonResponse({'message' : 'Node found', 'nodeData' : nodeData, 'sonet' : sonet})
             except:
                 node_id = node_id
                 dt = now_utc()
@@ -97,7 +97,7 @@ def get_node_request_view(request, node_id):
                 nodeData = get_signing_data(node)
                 print('node set up', node.__dict__)
                 print('return 2')
-                return JsonResponse({'message' : 'Node not found', 'nodeData' : json.dumps(nodeData), 'sonet' : sonet})
+                return JsonResponse({'message' : 'Node not found', 'nodeData' : nodeData, 'sonet' : sonet})
     except Exception as e:
         return JsonResponse({'message' : 'Fail', 'error' : str(e)})
 
@@ -138,7 +138,7 @@ def declare_node_state_view(request):
                             queue = django_rq.get_queue('default')
                             queue.enqueue(node_obj.broadcast_state, job_timeout=200)
 
-                            response = JsonResponse({'message' : 'Sync success', 'nodeData' : json.dumps(get_signing_data(node_obj))})
+                            response = JsonResponse({'message' : 'Sync success', 'nodeData' : get_signing_data(node_obj)})
                             return response
                         else:
                             return JsonResponse({'message' : 'Sync failed'})
