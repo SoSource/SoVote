@@ -826,23 +826,13 @@ def check_dataPacket(obj):
         return False
 
 def convert_to_dict(obj):
-    # print('convert_to_dict')
-    # print(obj)
     d1 = {'object_type' : obj.object_type}
     d2 = model_to_dict(obj)
-    # print(d)
-    # print()
-    # d['object_type'] = obj.object_type
     for key, value in d2.items():
-        # print(key, value)
         try:
-        #     if isinstance(datetime, value):
-        # d[key] = value
             d2[key] = datetime.datetime.isoformat(value)
         except Exception as e:
-        #     print(str(e))
             pass
-    # print()
     new_dict = {**d1, **d2}
     return new_dict
 

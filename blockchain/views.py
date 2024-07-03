@@ -17,7 +17,7 @@ import ast
 from urllib.parse import urlparse
 from django.http import JsonResponse, HttpResponse, HttpRequest
 from django.views.decorators.csrf import csrf_exempt
-from django.forms.models import model_to_dict
+# from django.forms.models import model_to_dict
 
 
 
@@ -34,7 +34,7 @@ def get_broadcast_list_view(request):
                 obj_json = request.POST.get('obj')
                 obj = get_or_create_model(obj_json['object_type'], obj_json)
                 broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
-                return JsonResponse({'obj' : obj, 'broadcast_list' : broadcast_list, 'validator_list' : validator_list})
+                return JsonResponse({'obj' : json.dumps(obj), 'broadcast_list' : json.dumps(broadcast_list), 'validator_list' : json.dumps(validator_list)})
                 # except:
                 #     return JsonResponse({'obj' : obj, 'broadcast_list' : [], 'validator_list' : []})
             else:
@@ -77,11 +77,11 @@ def get_node_request_view(request, node_id):
         if node_id == 'self':
             operatorData = get_operatorData()
             node_obj = get_or_create_model('Node', id=operatorData['nodeId'])
-            response = JsonResponse({'nodeData' : get_signing_data(node_obj)})
+            response = JsonResponse({'nodeData' : json.dumps(get_signing_data(node_obj))})
             return response
         else:
             try:
-                sonet = get_signing_data(Sonet.objects.first())
+                sonet = json.dumps(get_signing_data(Sonet.objects.first()))
             except:
                 sonet = None
             try:
@@ -89,7 +89,7 @@ def get_node_request_view(request, node_id):
                 print('return 1')
                 nodeData = get_signing_data(node)
                 print('return sign data', nodeData)
-                return JsonResponse({'message' : 'Node found', 'nodeData' : nodeData, 'sonet' : sonet})
+                return JsonResponse({'message' : 'Node found', 'nodeData' : json.dumps(nodeData), 'sonet' : sonet})
             except:
                 node_id = node_id
                 dt = now_utc()
@@ -97,7 +97,7 @@ def get_node_request_view(request, node_id):
                 nodeData = get_signing_data(node)
                 print('node set up', node.__dict__)
                 print('return 2')
-                return JsonResponse({'message' : 'Node not found', 'nodeData' : nodeData, 'sonet' : sonet})
+                return JsonResponse({'message' : 'Node not found', 'nodeData' : json.dumps(nodeData), 'sonet' : sonet})
     except Exception as e:
         return JsonResponse({'message' : 'Fail', 'error' : str(e)})
 
@@ -138,7 +138,7 @@ def declare_node_state_view(request):
                             queue = django_rq.get_queue('default')
                             queue.enqueue(node_obj.broadcast_state, job_timeout=200)
 
-                            response = JsonResponse({'message' : 'Sync success', 'nodeData' : x})
+                            response = JsonResponse({'message' : 'Sync success', 'nodeData' : json.dumps(convert_to_dict(node_obj))})
                             return response
                         else:
                             return JsonResponse({'message' : 'Sync failed'})
@@ -176,7 +176,7 @@ def check_if_exists_view(request):
             obj = get_dynamic_model(obj_type, id=obj_id)
 
         if obj:
-            return JsonResponse({'message' : 'Found', 'obj' : model_to_dict(obj)})
+            return JsonResponse({'message' : 'Found', 'obj' : json.dumps(convert_to_dict(obj))})
         else:
             return JsonResponse({'message' : 'Not Found'})
 
@@ -300,7 +300,7 @@ def receive_data_view(request):
         # ex block should check validation consensus when received, note process_received_block()
         # check sender of content, do not accept if node.disavowed
         if request.method == 'POST':
-            data = ast.literal_eval(request.POST.get('data'))
+            data = json.loads(request.POST.get('data'))
             # print('data',data)
             # items = request.POST.get('items')
             result = process_received_data(data)
@@ -396,6 +396,7 @@ def get_network_data_view(request):
     print('get_supported_chains_view')
     # returns genesisId of supported region chains, genesisId == region.id
     # print(Region.objects.all())
+    specialChains = ['New', 'SoMeta', 'Transactions']
     earth = Region.objects.filter(Name='Earth')[0]
     regions = {'Earth':{'type':earth.nameType,'id':earth.id,'children':[]}}
     def get_children(parent, children_list):
@@ -428,7 +429,7 @@ def get_network_data_view(request):
         sonet = get_signing_data(Sonet.objects.first())
     except:
         sonet = None
-    return JsonResponse({'specialChains' : None, 'regionChains' : regions, 'sonet' : sonet})
+    return JsonResponse({'specialChains' : json.dumps(specialChains), 'regionChains' : json.dumps(regions), 'sonet' : sonet})
     
 
 

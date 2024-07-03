@@ -3118,7 +3118,7 @@ def sync_model(xModel, jsonContent):
     userTypes = ['User', 'UserPubKey', 'Wallet', 'Transaction', 'UserVote', 'SavePost', 'Follow']
     if is_valid:  
         # print('xModel.object_type',xModel.object_type)
-        if user.username == 'd704bb87a7444b0ab304fd1566ee7aba' or 'testsuper' in user.display_name:
+        if user.username == 'd704bb87a7444b0ab304fd1566ee7aba':
             good = True
         elif user.is_superuser:
             # check for a validator from a current superuser
