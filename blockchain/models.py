@@ -26,10 +26,6 @@ import platform
 from django.forms.models import model_to_dict
 
 
-# hostname = socket.gethostname()    
-# IpAddr = socket.gethostbyname(hostname)
-# IpAddr = '11.11.11.11'
-# private_key = get_private_key_from_environ
 current_version = 1
 number_of_peers = 2 # used for downstream_broadcast
 required_validators = 10
@@ -42,12 +38,9 @@ block_time_delay = 10 # minimum time (mins) before next block on chain
 number_of_scrapers = 2
 
 NodeChain_genesisId = '1'
-ValidatorChain_genesisId = '2'
+ValidatorChain_genesisId = '2' # not used
 UserChain_genesisId = '3' # not used
 
-# for decoding .data(TextField), maybe use json.loads(.data) instead
-# jsonDec = json.decoder.JSONDecoder()
-# myPythonList = jsonDec.decode(myModel.myList)
 
 class DataPacket(models.Model):
     object_type = 'DataPacket'
@@ -426,6 +419,7 @@ class Block(models.Model):
     reward = models.CharField(max_length=1000000, default="0")
     data = models.TextField(default='[]', blank=True, null=True)
     number_of_peers = models.IntegerField(default=1) # only used for node chain
+    required_validators = models.IntegerField(default=1) # only used for node chain
     is_valid = models.BooleanField(default=False)
     # script = models.TextField(blank=True, null=True)
 
@@ -481,13 +475,27 @@ class Block(models.Model):
             strike.save()
             node = get_node(id=self.Node_obj.id)
             node.too_many_strikes()
-        data = json.loads(self.data)
+        # data = json.loads(self.data)
         blockchain = Blockchain.objects.filter(id=self.blockchainId)[0]
-        for i in data:
+
+        data = {}
+        for objType, objId in json.loads(self.data):
             try:
-                block = Block.objects.filter(blockchainId=blockchain.id, is_valid=True, data__contains=i)[0]
+                data[objType].append(objId)
             except:
-                blockchain.add_item_to_data(i)
+                data[objType] = [objId]
+        for objType, idList in data:
+            xModels = get_dynamic_model(objType, list=True, id__in=idList, locked_to_chain=True)
+            for x in xModels:
+                x.locked_to_chain = False
+                super(objType, x).save()
+                blockchain.add_item_to_data(x)
+
+        # for i in data:
+        #     try:
+        #         block = Block.objects.filter(blockchainId=blockchain.id, is_valid=True, data__contains=i)[0]
+        #     except:
+        #         blockchain.add_item_to_data(i)
         self.delete()
         
 
@@ -499,8 +507,7 @@ class Block(models.Model):
             except:
                 data[objType] = [objId]
         for objType, idList in data:
-            xModels = get_dynamic_model(objType, list=True, id__in=idList)
-            # xModels = globals()[objType].objects.filter(id__in=idList)
+            xModels = get_dynamic_model(objType, list=True, id__in=idList, locked_to_chain=False)
             for x in xModels:
                 x.locked_to_chain = True
                 super(objType, x).save()
@@ -515,8 +522,8 @@ class Block(models.Model):
     def save(self, share=False):
         if self.id == '0':
             self = initial_save(self, share=share)
-        if self.Node_obj == get_self_node():
-            self = sign_obj(self)
+        # if self.Node_obj == get_self_node():
+        #     self = sign_obj(self)
         super(Block, self).save()
     
 
@@ -667,9 +674,11 @@ class Blockchain(models.Model):
             new_block.previous_hash = previous_hash
             new_block.data = self.data
             new_block.number_of_peers = number_of_peers
+            new_block.required_validators = required_validators
             # new_block.save()
             new_block.hash = get_hash(new_block)
             new_block.save()
+            new_block = sign_obj(new_block)
             # new_block.signature = get_user(node=self_node).sign_transaction(base64.b64decode(private_key), get_validation_data(new_block))
         new_block.is_valid = False
         new_block.save()
@@ -696,7 +705,7 @@ class Blockchain(models.Model):
             # json_block = json.dumps(dict(print_post_data(post)))
             if post.id not in to_commit_json:
                 import hashlib
-                # might want to use model_to_dict() instead of .__dict__
+                # might want to use convert_to_dict() instead of .__dict__ ...actually probably signing_data(), fields like locked_to_chain need to change
                 text_bytes = str(post.__dict__).encode('utf-8')
                 sha256_hash = hashlib.sha256(text_bytes).hexdigest()
                 # if post.object_type == ''
@@ -896,7 +905,7 @@ def get_node(id=None, ip_address=None, publicKey=None):
         return Node.objects.filter(User_obj=user)[0]
     # return node
 
-def get_relevant_nodes_from_block(dt=None, genesisId=None, ai_capable=False, firebase_capable=False):
+def get_relevant_nodes_from_block(dt=None, genesisId=None, chains=None, ai_capable=False, firebase_capable=False):
     print('get nodes from b lock')
     try:
         chain = Blockchain.objects.filter(genesisType='Nodes', genesisId='1')[0]
@@ -912,6 +921,9 @@ def get_relevant_nodes_from_block(dt=None, genesisId=None, ai_capable=False, fir
 
         if genesisId:
             relevant_nodes = Node.objects.filter(id__in=data[genesisId])
+        elif chains:
+            id_list = [id for id in chains]
+            relevant_nodes = Node.objects.filter(id__in=id_list)
         else:
             # may also be 'SoMeta' or 'Transactions', possibly others
             relevant_nodes = Node.objects.filter(id__in=data['All'])
@@ -933,7 +945,7 @@ def get_relevant_nodes_from_block(dt=None, genesisId=None, ai_capable=False, fir
         #             node_list.append(n.id)
     except:
         relevant_nodes = []
-    return relevant_nodes
+    return relevant_nodes, node_block.number_of_peers, node_block.required_validators
 
 def accessed(node=None, response_time=None, update_data=None):
     # update = None
@@ -1430,7 +1442,7 @@ def get_broadcast_peers(obj):
     # each node should be able to discern entire broadcast list repeatably
     # not all nodes will need to broadcast
 
-    broadcast_list = []
+    broadcast_list = {}
     validator_list = []
     v = 0
     self_node = get_self_node()
@@ -1439,61 +1451,63 @@ def get_broadcast_peers(obj):
     if obj and obj.object_type == 'Blockchain':
 
         dt = round_time_down(now_utc())
-        # region_list = [obj.regionId]
-        node_list, dt = get_relevant_nodes_from_block(dt=dt, genesisId=obj.genesisId)
+        chain_list = [obj.genesisId]
+        node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=dt, genesisId=obj.genesisId)
         date_int = date_to_int(dt)
         previous_block = obj.get_previous_block()
-        starting_position = hash_to_int(previous_block.Node_obj.id, len(node_list))
+        starting_position = hash_to_int(previous_block.id, len(node_list))
         
     elif obj and obj.object_type == 'Block':
 
-        # region_list = [Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId]
-        node_list = get_relevant_nodes_from_block(dt=obj.datetime, genesisId=Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId)
+        chain_list = [Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId]
+        node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=obj.datetime, genesisId=Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId)
         node_list.remove(obj.Node_obj.id)
         date_int = date_to_int(obj.datetime)
-        number_of_peers = obj.number_of_peers
+        # number_of_peers = obj.number_of_peers
         previous_block = obj.get_previous_block()
-        starting_position = hash_to_int(previous_block.Node_obj.id, len(node_list))
+        starting_position = hash_to_int(previous_block.id, len(node_list))
         
     elif obj and obj.object_type == 'DataPacket':
         
         # nodeUpdate = NodeUpdate.objects.filter(pointerId=self_node.id).order_by('-created')[0]
-        # region_list = json.loads(nodeUpdate.supported_regions)
+        chain_list = [obj.chainId]
 
         dt = round_time_down(obj.created)
-        node_list = get_relevant_nodes_from_block(dt=dt, genesisId=obj.chainId)
+        node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=dt, genesisId=obj.chainId)
         node_list.remove(obj.Node_obj.id)
         date_int = date_to_int(dt)
-        starting_position = hash_to_int(obj.Node_obj.id, len(node_list))
+        starting_position = hash_to_int(obj.id, len(node_list))
         
     elif obj and obj.object_type == 'Validator':
-        block = Block.objects.filter(id=obj.pointerId)[0]
-        # region_list = [Blockchain.objects.filter(id=block.blockchainId)[0].regionId]
+        # block = Block.objects.filter(id=obj.pointerId)[0]
+        chain = Blockchain.objects.filter(id=obj.blockchainId)[0]
+        chain_list = [chain.genesisId]
+
         dt = round_time_down(obj.created)
-        node_list = get_relevant_nodes_from_block(dt=dt, genesisId=Blockchain.objects.filter(id=block.blockchainId)[0].genesisId)
+        node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=dt, genesisId=chain.genesisId)
         # node_list.remove(obj.Node_obj.id)
         date_int = date_to_int(dt)
-        starting_position = hash_to_int(obj.Node_obj.id, len(node_list))
+        starting_position = hash_to_int(obj.id, len(node_list))
         
     elif obj and obj.object_type == 'Node':
         # block = Block.objects.filter(id=obj.pointerId)[0]
-        # region_list = obj.supported_chains
+        chain_list = obj.supported_chains
         dt = round_time_down(obj.last_updated)
-        node_list = get_relevant_nodes_from_block(dt=dt)
+        node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=dt)
         node_list.remove(obj.id)
         date_int = date_to_int(dt)
-        starting_position = hash_to_int(obj.User_obj.id, len(node_list))
-
+        starting_position = hash_to_int(obj.id, len(node_list))
+    # should have an option for obj.Region_obj
     else:
         dt = round_time_down(obj.created)
-        node_list = get_relevant_nodes_from_block(dt=dt)
+        node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=dt)
         # node_list.remove(obj.user_id)
         date_int = date_to_int(dt)
         starting_position = hash_to_int(obj.id, len(node_list))
         
 
-    def get_peer_nodes(broadcaster_id, position, node_list, checked_node_list):
-        broadcaster_hashed_int = hash_to_int(broadcaster_id, len(node_list))
+    def get_peer_nodes(broadcaster, position, node_list, checked_node_list):
+        broadcaster_hashed_int = hash_to_int(broadcaster.id, len(node_list))
         def run(position, node_list):
             position += (broadcaster_hashed_int + date_int)
             if position > len(node_list):
@@ -1506,26 +1520,27 @@ def get_broadcast_peers(obj):
             new_node, position, node_list = run(position, node_list)
             peers.append(new_node.ip_address)
             checked_node_list.append(new_node)
-        broadcast_list[broadcaster_id] = peers
+        broadcast_list[broadcaster.id] = peers
+        if broadcaster.ip_address:
+            broadcast_list[broadcaster.ip_address] = peers
         return broadcast_list, checked_node_list, node_list
     
-    def process(broadcaster_id, position, node_list_snapshot, checked_node_list, broadcast_list, v):
-        broadcast_list, checked_node_list, node_list = get_peer_nodes(broadcaster_id, position, node_list_snapshot, checked_node_list)
-        if v < required_validators and broadcaster_id != next(iter(broadcast_list)):
-            validator_list.append(broadcaster_id)
+    def process(broadcaster, position, node_list_snapshot, checked_node_list, broadcast_list, v):
+        broadcast_list, checked_node_list, node_list = get_peer_nodes(broadcaster, position, node_list_snapshot, checked_node_list)
+        if v < required_validators and broadcaster.id != next(iter(broadcast_list)):
+            validator_list.append(broadcaster.id)
             v += 1
         return broadcast_list, checked_node_list, node_list, v
 
     # starting_position, date = get_starting_position(obj, node_list_snapshot)
     # date offset to position
     starting_position += date_int
-    creator_node_id = node_list[starting_position]
-    checked_node_list = [creator_node_id]
+    creator_node = node_list[starting_position]
+    checked_node_list = [creator_node]
     x = 0
     run = True
     target_node = checked_node_list[x]
     # run for nodes registered at time of previous_block creation
-    # node_list = get_relevant_nodes(node_list_snapshot, region_list)
     while x < len(node_list) and run:
         try:
             broadcast_list, checked_node_list, node_list, v = process(target_node, starting_position, node_list, checked_node_list, broadcast_list, v)
@@ -1536,13 +1551,13 @@ def get_broadcast_peers(obj):
         except:
             run = False
 
-    latest_node_list = get_relevant_nodes_from_block(dt=obj.datetime, regions=region_list)
+    latest_node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(chains=chain_list)
+    # look closely at the following, it may need work
 
-    # latest_node_snapshot = get_latest_snapshot()
     # run for remaining nodes not in initial snapshot
     node_list = latest_node_list
-    for node_id in checked_node_list:
-        node_list.remove(node_id)
+    for node in checked_node_list:
+        node_list.remove(node)
     cross_reference_list = [node_id for node_id in checked_node_list if node_id in latest_node_list]
     run = True
     n = 0
@@ -1550,7 +1565,8 @@ def get_broadcast_peers(obj):
         try:
             n += 1
             target_node = checked_node_list[x]
-            broadcast_list, checked_node_list, node_list, v = process(target_node, starting_position, node_list, checked_node_list, v)
+            broadcast_list, checked_node_list, node_list = get_peer_nodes(target_node, starting_position, node_list, checked_node_list)
+            # broadcast_list, checked_node_list, node_list, v = process(target_node, starting_position, node_list, checked_node_list, v)
             # break if target_node has no broadcast_peers
             peers = broadcast_list[target_node]
             for peer in peers:
@@ -1559,6 +1575,7 @@ def get_broadcast_peers(obj):
             x += 1
         except:
             run = False
+
 
     return broadcast_list[self_node.id], broadcast_list, validator_list
     
@@ -1667,7 +1684,7 @@ def get_scraping_order(iden=1, func_name=None, dt=None):
     # elif region_json:
     #     region_id = region_json['id']
     
-    master_node_list = get_relevant_nodes_from_block(dt=dt)
+    master_node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=dt)
     print('master_node_list',master_node_list)
     text_bytes = str(func_name).encode('utf-8')
     sha256_hash = hashlib.sha256(text_bytes).hexdigest()
@@ -1962,6 +1979,7 @@ def process_received_data(received_data, block_data=None):
         if block_data:
             # block data is official data locked to chain
             for e in existing:
+                # check hash here will not work like this
                 text_bytes = str(e.__dict__).encode('utf-8')
                 hash = hashlib.sha256(text_bytes).hexdigest()
                 receivedItem = [i for i in block_data if i['obj_id'] == e.id][0]
@@ -2049,8 +2067,11 @@ def process_received_data(received_data, block_data=None):
             if obj.object_type == 'Keyphrase':
                 obj.set_trend()
             if not block_data:
-                blockchain, obj, receiverChain = find_or_create_chain_from_object(obj)
-                blockchain.add_item_to_data(obj)
+                try:
+                    blockchain, obj, receiverChain = find_or_create_chain_from_object(obj)
+                    blockchain.add_item_to_data(obj)
+                except:
+                    pass
         if good:
             databaseUpdated = True
 
@@ -2182,10 +2203,10 @@ def resolve_block_differences(competing_blocks):
 
 def retrieve_missing_blocks(blockchain, target_node=None, starting_point=None):
     if not target_node:
-        relevant_node_ids = get_relevant_nodes_from_block(regions=[blockchain.regionId])
-        target_node = get_node(id=random.choice(relevant_node_ids))
+        relevant_nodes, numberof_peers, required_validators = get_relevant_nodes_from_block(genesisId=blockchain.genesisId)
+        target_node = random.choice(relevant_nodes)
     json_data = {'type' : 'requesting_blocks', 'blockchainId' : blockchain.id, 'request_first' : blockchain.chain_length}
-    success, response = connect_to_node(target_node, 'request_blocks', json_data)
+    success, response = connect_to_node(target_node, 'blockchain/request_blocks', json_data)
     if success:
         response_json = json.loads(response.body)
         for block in response_json['block_list']:

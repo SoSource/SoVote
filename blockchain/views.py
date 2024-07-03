@@ -31,7 +31,7 @@ def get_broadcast_list_view(request):
             if request.method == 'POST':
                 print()
                 # try:
-                obj_json = request.POST.get('obj')
+                obj_json = json.loads(request.POST.get('obj'))
                 obj = get_or_create_model(obj_json['object_type'], obj_json)
                 broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
                 return JsonResponse({'obj' : json.dumps(obj), 'broadcast_list' : json.dumps(broadcast_list), 'validator_list' : json.dumps(validator_list)})
@@ -77,7 +77,7 @@ def get_node_request_view(request, node_id):
         if node_id == 'self':
             operatorData = get_operatorData()
             node_obj = get_or_create_model('Node', id=operatorData['nodeId'])
-            response = JsonResponse({'nodeData' : json.dumps(get_signing_data(node_obj))})
+            response = JsonResponse({'message' : 'Success', 'nodeData' : json.dumps(get_signing_data(node_obj)), 'fullNodeData' : json.dumps(convert_to_dict(node_obj))})
             return response
         else:
             try:
@@ -138,7 +138,7 @@ def declare_node_state_view(request):
                             queue = django_rq.get_queue('default')
                             queue.enqueue(node_obj.broadcast_state, job_timeout=200)
 
-                            response = JsonResponse({'message' : 'Sync success', 'nodeData' : json.dumps(convert_to_dict(node_obj))})
+                            response = JsonResponse({'message' : 'Sync success', 'nodeData' : json.dumps(get_signing_data(node_obj))})
                             return response
                         else:
                             return JsonResponse({'message' : 'Sync failed'})
