@@ -32,7 +32,7 @@ def get_broadcast_list_view(request):
                 print()
                 # try:
                 obj_json = json.loads(request.POST.get('obj'))
-                obj = get_or_create_model(obj_json['object_type'], **obj_json)
+                obj = get_or_create_model(obj_json['object_type'], id=obj_json['id'], created=obj_json['created'])
                 broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
                 return JsonResponse({'obj' : json.dumps(obj), 'broadcast_list' : json.dumps(broadcast_list), 'validator_list' : json.dumps(validator_list)})
                 # except:
