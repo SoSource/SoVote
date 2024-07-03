@@ -1276,7 +1276,7 @@ def receive_user_login_view(request):
                 if is_valid:
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     print('user logged in')
-                    response = JsonResponse({'message' : 'Valid Username and Password', 'userData' : x})
+                    response = JsonResponse({'message' : 'Valid Username and Password', 'userData' : json.dumps(x)})
                     # response.set_cookie(key='userData', value=json.dumps(x), expires=datetime.datetime.today()+datetime.timedelta(days=3650))
                     return response
                 else:
