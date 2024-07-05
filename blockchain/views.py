@@ -25,15 +25,23 @@ from django.views.decorators.csrf import csrf_exempt
 def get_broadcast_list_view(request):
     print('get_broadcast_list_view')
     try:
+        A = 'start'
         obj = 'objx'
         obj_json = 'jsonx'
         try:
             if request.method == 'POST':
                 print()
                 # try:
+
+                # broadcast_json {'message': 'the JSON object must be str, bytes or bytearray, not dict__NODE: 99.255.114.64:7003//{\'object_type\': \'Node\', \'id\': \'6ed3ce39af164b729ee7428d8a191913\', \'created\': \'2024-07-03T05:00:59.214283+00:00\', \'last_updated\': \'2024-07-03T05:29:00.871575+00:00\', \'ip_address\': \'99.255.114.64:7003\', \'fcm_capable\': False, \'ai_capable\': False, \'self_declare_active\': True, \'supported_chains\': [\'New\', \'SoMeta\', \'Transactions\'], \'User_obj\': \'d704bb87a7444b0ab304fd1566ee7aba\', \'publicKey\': \'040c60724a687e5b430ea27c8a373d8634ac791096cb56ff903898b7a4d64ece1989b491aedac752ae1611bed4d26d1f818197b200dbe8b82a4a71588bec837cf5\', \'signature\': \'3045022066a35933ef79a554014896215cb27004c03ddc4416fafe4d3d5d
+                                
+                A = '1'
                 obj_json = json.loads(request.POST.get('obj'))
+                A = '2'
                 obj = get_or_create_model(obj_json['object_type'], id=obj_json['id'], created=obj_json['created'])
+                A = '3'
                 broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
+                A = '4'
                 return JsonResponse({'obj' : json.dumps(obj), 'broadcast_list' : json.dumps(broadcast_list), 'validator_list' : json.dumps(validator_list)})
                 # except:
                 #     return JsonResponse({'obj' : obj, 'broadcast_list' : [], 'validator_list' : []})
@@ -44,7 +52,7 @@ def get_broadcast_list_view(request):
                 x = request.POST.get('obj')
             except Exception as x:
                 x = str(x)
-            return JsonResponse({'message' : str(e) + '__' + str(obj) + '//' + str(obj_json) + '--' + x})
+            return JsonResponse({'message' : str(e) + 'A:' + A + '__' + str(obj) + '//' + str(obj_json) + '--' + x})
     except Exception as e:
         return JsonResponse({'message' : str(e)})
 
