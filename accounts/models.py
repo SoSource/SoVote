@@ -43,6 +43,7 @@ class Sonet(models.Model):
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     Title = models.CharField(max_length=200, default="x")
     Subtitle = models.CharField(max_length=200, default="", blank=True, null=True)
     LogoLink = models.CharField(max_length=200, default="/static/img/default_logo.png")
@@ -87,6 +88,7 @@ class BaseAccountModel(models.Model):
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     publicKey = models.CharField(max_length=200, default="0")
     signature = models.CharField(max_length=200, default="0")
 
@@ -102,6 +104,7 @@ class User(AbstractUser):
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     # automated = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # user_id = models.CharField(max_length=50, default="0")
     signature = models.CharField(max_length=200, default="0")
 
@@ -708,6 +711,7 @@ class SavePost(models.Model):
     object_type = "SavePost"
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     publicKey = models.CharField(max_length=200, default="0")
     signature = models.CharField(max_length=200, default="0")
     postId = models.CharField(max_length=50, default="0")
@@ -776,7 +780,8 @@ class Interaction(models.Model):
     object_type = "Interaction"
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # automated = models.BooleanField(default=False)
     # publicKey = models.CharField(max_length=200, default="0")
     # signature = models.CharField(max_length=200, default="0")

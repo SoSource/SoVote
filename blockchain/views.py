@@ -194,111 +194,15 @@ def broadcast_dataPackets_view(request):
 
 def chainTest_view(request):
     print('chainTest_view')
-    # upk = UserPubKey.objects.all()[0]
-    # print(convert_to_dict(upk))
-    # print()
-    # user = User.objects.filter(display_name='test2')[0]
-    # print(convert_to_dict(user))
-    # print()
-    # print(get_signing_data(user))
-    # print()
-    # is_valid, user = verify_obj_to_data(user, user, return_user=True)
-    # print('is_valid_end',is_valid)
-    # print()
-    def get_data(data, nodes, output=None):
-        for node in nodes:
-            response = requests.post('http://' + node + '/blockchain/request_data', data=data)
-            if response.status_code == 200:
-                received_json = response.json()
-                print('received_json',received_json)
-                if received_json['message'] == 'Found':
-                    if data['type'] == 'Blockchain':
-                        for chain in received_json['blockchain']:
-                            chainData = ast.literal_eval(chain)
-                            # if output:
-                            #     Clock.schedule_once(lambda dt, output=output, line=f'Received {chainData["genesisType"]} Chain: {chainData["genesisId"]}\n': update_output(output, line))
-                        print('send block')
-                        r = requests.post(f'http://127.0.0.1:3005/blockchain/receive_data', data={'data' : received_json['blockchain']})
-                        r_json = r.json()
-                        if r_json['message'] == 'Finished':
-                            print(r_json['result'])
-                            return {'result' : r_json['result'], 'chainData' : received_json['blockchain']}
-                        else:
-                            return {'result' : r_json}
-                    elif data['type'] == 'Block':
-                        # if output:
-                        #     Clock.schedule_once(lambda dt, output=output, line=f'Received Block {index}\n': update_output(output, line))
-                        block = ast.literal_eval(received_json['block'])
-                        content = received_json['content']
-                        index = block['index']
-                        r = requests.post(f'http://127.0.0.1:3005/blockchain/receive_data', data={'data' : [received_json['block']]})
-                        if r.json()['message'] == 'Finished':
-                            print('send block content')
-                            for i in content:
-                                r = requests.post(f'http://127.0.0.1:3005/blockchain/receive_data', data={'data' : str([i])})
-                            return {'result' : 'True', 'index' : index}
-                        else:
-                            return {'result' : 'False', 'index' : index}
-                    else:
-                        receivedData = json.loads(received_json['data'])
-                        try:
-                            index = received_json['index']
-                        except:
-                            index = 'NA'
-                        # print('receivedData', receivedData)
-                        # if output:
-                        #     Clock.schedule_once(lambda dt, output=output, line=f'Received data.\n': update_output(output, line))
-                        for i in receivedData:
-                            # i = ast.literal_eval(i)
-                            print(i)
-                            r = requests.post(f'http://127.0.0.1:3005/blockchain/receive_data', data={'data' : str([i])})
-                            r_json = r.json()
-                            if r_json['message'] == 'Finished':
-                                print(r_json['result'])
-                            else:
-                                print(r_json)
-                        if index != 'NA' and len(receivedData) >= 250:
-                            data['index'] = index
-                            get_data(data, nodes, output=output)
-                        return {'result' : 'True'}
-                else:
-                    print(received_json)
-                    return {'result' : 'False', 'message' : received_json}
-            else:
-                print(response)
-                return {'result' : 'False', 'message' : response}
-        return {'result' : 'False', 'message' : 'no responses'}
+    # n = Node(self_declare_active=True, ip_address='10.0.0.39:3005', User_obj=request.user)
+    # n.save()
+    node = Node.objects.all()[0]
+    # node.last_updated = now_utc()
+    # node.save()
+    print(node)
+    broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(node)
+    print(broadcast_list)
 
-    def get_chain(genesisId, nodes, output=None):
-        data = {'obj_type' : 'Blockchain', 'genesisId' : genesisId}
-        result = get_data(data, nodes, output=output)
-        if result['result'] == 'True':
-            for chain in result['chainData']:
-                chainData = ast.literal_eval(chain)
-                chain_length = chainData['chain_length']
-                data = {'type' : 'Block', 'blockchainId' : chainData['id'], 'index' : chain_length}
-                r = requests.post(f'http://127.0.0.1:3005/blockchain/check_if_exists', data=chain)
-                r_json = r.json()
-                if r_json['message'] == 'Not Found':
-                    index = int(chain_length)
-                    while index >= 0:
-                        data = {'type' : 'Block', 'blockchainId' : chainData['id'], 'index' : index}
-                        r = requests.post(f'http://127.0.0.1:3005/blockchain/check_if_exists', data=chain)
-                        r_json = r.json()
-                        if r_json['message'] == 'Found':
-                            break
-                        else:
-                            index -= 1
-                    while index < chain_length:
-                        data = {'type' : 'Block', 'blockchainId' : chainData['id'], 'index' : index}
-                        result = get_data(data, nodes, output=output)
-                        index += 1
-        else:
-    
-            print(result)
-    
-    data = {'type' : 'User', 'items' : 'All', 'index' : 0}
-    get_data(data, ['127.0.0.1:3005'])
 
 @csrf_exempt
 def receive_data_view(request):

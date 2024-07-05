@@ -47,6 +47,7 @@ class DataPacket(models.Model):
     # blockchainType = 'NoChain'
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     automated = models.BooleanField(default=False)
     data = models.TextField(default='[]', blank=True, null=True)
     # regions = models.TextField(default=[], blank=True, null=True)
@@ -146,6 +147,7 @@ class Node(models.Model):
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     ip_address = models.CharField(max_length=50, default="")
     fcm_capable = models.BooleanField(default=False)
     ai_capable = models.BooleanField(default=False)
@@ -322,6 +324,7 @@ class Node(models.Model):
 
 
     def save(self, share=False):
+        # super(Node, self).save()
         # if self.id == '0':
         #     self = initial_save(self, share=share)
         from accounts.models import UserPubKey
@@ -339,6 +342,7 @@ class NodeUpdate(models.Model):
     # locked_to_chain = models.BooleanField(default=False)
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # automated = models.BooleanField(default=False)
     pointerId = models.CharField(max_length=50, default="0") # target node
     pointerType = 'Node'
@@ -400,6 +404,7 @@ class Block(models.Model):
     blockchainType = models.CharField(max_length=50, default="")
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # automated = models.BooleanField(default=False)
     blockchainId = models.CharField(max_length=50, default="0")
     Blockchain_obj = models.ForeignKey('blockchain.Blockchain', blank=True, null=True, on_delete=models.CASCADE)
@@ -532,6 +537,7 @@ class Validator(models.Model):
     blockchainType = models.CharField(max_length=50, default="")
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # automated = models.BooleanField(default=False)
     blockchainId = models.CharField(max_length=50, default="0")
     publicKey = models.CharField(max_length=200, default="0")
@@ -565,7 +571,8 @@ class Blockchain(models.Model):
     object_type = 'Blockchain'
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     chain_length = models.IntegerField(default=0) 
     data = models.TextField(default='[]', blank=True, null=True)
     data_added_datetime = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True) # when new data was added since last block created
@@ -920,13 +927,13 @@ def get_relevant_nodes_from_block(dt=None, genesisId=None, chains=None, ai_capab
         data = json.loads(node_block.data)
 
         if genesisId:
-            relevant_nodes = Node.objects.filter(id__in=data[genesisId])
+            relevant_nodes = [n for n in Node.objects.filter(id__in=data[genesisId])]
         elif chains:
             id_list = [id for id in chains]
-            relevant_nodes = Node.objects.filter(id__in=id_list)
+            relevant_nodes = [n for n in Node.objects.filter(id__in=id_list)]
         else:
             # may also be 'SoMeta' or 'Transactions', possibly others
-            relevant_nodes = Node.objects.filter(id__in=data['All'])
+            relevant_nodes = [n for n in Node.objects.filter(id__in=data['All'])]
         # for i in data:
 
         #     relevant_nodes.append(i['pointerId'])
@@ -943,9 +950,12 @@ def get_relevant_nodes_from_block(dt=None, genesisId=None, chains=None, ai_capab
         #     for n in nodes:
         #         if i['pointerId'] == n.id:
         #             node_list.append(n.id)
+        return relevant_nodes, node_block.number_of_peers, node_block.required_validators
     except:
-        relevant_nodes = []
-    return relevant_nodes, node_block.number_of_peers, node_block.required_validators
+        print('nlist', Node.objects.all())
+        relevant_nodes = [n for n in Node.objects.all()]
+        # relevant_nodes = []
+        return relevant_nodes, number_of_peers, required_validators
 
 def accessed(node=None, response_time=None, update_data=None):
     # update = None
@@ -1153,7 +1163,7 @@ skip_fields = [
                'pointerPublicKey','pointerDateTime', 'Update_obj', 'hash',
                'coins', 'is_valid', 'slug', 'last_login', 'date_joined',
                'deactivated_time', 'deactivated', 'appToken', 'isVerified',
-               'blockchainId', 'groups', 'user_permissions'
+               'blockchainId', 'groups', 'user_permissions', 'updated_on_node'
                ]
  
 def get_signing_data(obj, extra_data=None):
@@ -1445,7 +1455,8 @@ def get_broadcast_peers(obj):
     broadcast_list = {}
     validator_list = []
     v = 0
-    self_node = get_self_node()
+    # self_node = get_self_node()
+    self_node = obj
 
 
     if obj and obj.object_type == 'Blockchain':
@@ -1461,7 +1472,7 @@ def get_broadcast_peers(obj):
 
         chain_list = [Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId]
         node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=obj.datetime, genesisId=Blockchain.objects.filter(id=obj.blockchainId)[0].genesisId)
-        node_list.remove(obj.Node_obj.id)
+        node_list.remove(obj.Node_obj)
         date_int = date_to_int(obj.datetime)
         # number_of_peers = obj.number_of_peers
         previous_block = obj.get_previous_block()
@@ -1474,7 +1485,7 @@ def get_broadcast_peers(obj):
 
         dt = round_time_down(obj.created)
         node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=dt, genesisId=obj.chainId)
-        node_list.remove(obj.Node_obj.id)
+        node_list.remove(obj.Node_obj)
         date_int = date_to_int(dt)
         starting_position = hash_to_int(obj.id, len(node_list))
         
@@ -1492,11 +1503,13 @@ def get_broadcast_peers(obj):
     elif obj and obj.object_type == 'Node':
         # block = Block.objects.filter(id=obj.pointerId)[0]
         chain_list = obj.supported_chains
-        dt = round_time_down(obj.last_updated)
+        dt = round_time_down(obj.created)
         node_list, number_of_peers, required_validators = get_relevant_nodes_from_block(dt=dt)
-        node_list.remove(obj.id)
+        node_list.remove(obj)
         date_int = date_to_int(dt)
+        print('date_int',date_int)
         starting_position = hash_to_int(obj.id, len(node_list))
+        print('starting_position11',starting_position)
     # should have an option for obj.Region_obj
     else:
         dt = round_time_down(obj.created)
@@ -1505,6 +1518,8 @@ def get_broadcast_peers(obj):
         date_int = date_to_int(dt)
         starting_position = hash_to_int(obj.id, len(node_list))
         
+    if len(node_list) == 0:
+        return {}, {}, []
 
     def get_peer_nodes(broadcaster, position, node_list, checked_node_list):
         broadcaster_hashed_int = hash_to_int(broadcaster.id, len(node_list))
@@ -1535,6 +1550,13 @@ def get_broadcast_peers(obj):
     # starting_position, date = get_starting_position(obj, node_list_snapshot)
     # date offset to position
     starting_position += date_int
+    starting_position = int(starting_position)
+    print('starting_position',starting_position)
+    print('node_list',node_list)
+    print('len(node_list)',len(node_list))
+    while starting_position > len(node_list) - 1:
+        starting_position -= len(node_list)
+    print('starting_position22',starting_position)
     creator_node = node_list[starting_position]
     checked_node_list = [creator_node]
     x = 0
@@ -1576,7 +1598,7 @@ def get_broadcast_peers(obj):
         except:
             run = False
 
-
+    print('broadcast_list',broadcast_list)
     return broadcast_list[self_node.id], broadcast_list, validator_list
     
 def every_10_mins():

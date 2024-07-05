@@ -74,7 +74,7 @@ skipwords = [
 class BaseModel(models.Model):
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     func = models.CharField(max_length=50, default="")
     blockchainId = models.CharField(max_length=50, default="")
     locked_to_chain = models.BooleanField(default=False)
@@ -95,6 +95,7 @@ class Government(models.Model):
     modelVersion = models.CharField(max_length=50, default="v1")
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     func = models.CharField(max_length=50, default="")
     blockchainId = models.CharField(max_length=50, default="")
     locked_to_chain = models.BooleanField(default=False)
@@ -1809,6 +1810,7 @@ class Spren(models.Model):
     # date_time = models.DateTimeField(auto_now=False, auto_now_add=False, blank=False, null=True)
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     func = models.CharField(max_length=50, default="")
     blockchainId = models.CharField(max_length=50, default="")
@@ -1973,6 +1975,7 @@ class SprenItem(models.Model):
     # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     func = models.CharField(max_length=50, default="")
     blockchainId = models.CharField(max_length=50, default="")
@@ -3807,6 +3810,7 @@ class Person(BaseModel):
 class Region(models.Model):
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     func = models.CharField(max_length=50, default="")
     object_type = "Region"
@@ -4282,12 +4286,12 @@ class Role(BaseModel):
 
 
 class Post(models.Model):
-    # posts will fail verification after receiving updates, still needs signature upon initial share, must be shared for common post.id
     object_type = "Post"
     # blockchainType = 'NoChain'
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     # blockchainId = models.CharField(max_length=50, default="0")
     # locked_to_chain = models.BooleanField(default=False)
     # modelVersion = models.CharField(max_length=50, default="v1")
@@ -4476,7 +4480,8 @@ class PostHistory(models.Model):
     blockchainType = 'NoChain'
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    # last_updated = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     data = models.TextField(default='{}', blank=True, null=True)
 
     def save(self, share=False):
@@ -4696,6 +4701,7 @@ class TopPost(models.Model):
     blockchain_type = 'Government'
     id = models.CharField(max_length=50, default="0", primary_key=True)
     created = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    updated_on_node = models.DateTimeField(auto_now=True, auto_now_add=False, blank=True, null=True)
     post = models.ForeignKey(Post, blank=True, null=True, on_delete=models.SET_NULL)
     cycle = models.IntegerField(default=None, blank=True, null=True)
     chamber = models.CharField(max_length=20, default='', blank=True, null=True)
