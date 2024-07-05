@@ -42,7 +42,7 @@ def get_broadcast_list_view(request):
                 A = '3'
                 broadcast_peers, broadcast_list, validator_list = get_broadcast_peers(obj)
                 A = '4'
-                return JsonResponse({'obj' : json.dumps(obj), 'broadcast_list' : json.dumps(broadcast_list), 'validator_list' : json.dumps(validator_list)})
+                return JsonResponse({'obj' : json.dumps(obj_json), 'broadcast_list' : json.dumps(broadcast_list), 'validator_list' : json.dumps(validator_list)})
                 # except:
                 #     return JsonResponse({'obj' : obj, 'broadcast_list' : [], 'validator_list' : []})
             else:
